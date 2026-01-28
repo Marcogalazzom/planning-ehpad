@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning des Activités - EHPAD Claudette Chesne</title>
+    <!-- Tailwind CSS pour le style -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts pour une meilleure lisibilité -->
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: #f8fafc;
+        }
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Animation douce pour les cartes */
+        .activity-card {
+            transition: all 0.3s ease;
+        }
+        .activity-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        /* Pour l'accessibilité : focus visible */
+        button:focus {
+            outline: 3px solid #facc15;
+            outline-offset: 2px;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- En-tête -->
+    <header class="bg-white shadow-md sticky top-0 z-50 border-b-4 border-emerald-500">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-100 p-3 rounded-full text-emerald-600">
+                    <i class="fas fa-leaf text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-slate-800">EHPAD - Claudette Chesne</h1>
+                    <p class="text-slate-500 text-sm md:text-base">Planning de la semaine</p>
+                </div>
+            </div>
+            
+            <button id="authBtn" onclick="toggleAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2">
+                <i class="fas fa-lock"></i> <span class="hidden md:inline">Espace Admin</span>
+            </button>
+            <button id="logoutBtn" onclick="logout()" class="hidden bg-red-100 hover:bg-red-200 text-red-600 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2">
+                <i class="fas fa-sign-out-alt"></i> <span class="hidden md:inline">Déconnexion</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Zone de notification (Toast) -->
+    <div id="toast" class="fixed top-24 right-5 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-xl transform translate-x-full transition-transform duration-300 z-50 flex items-center gap-3">
+        <i class="fas fa-info-circle text-emerald-400"></i>
+        <span id="toastMessage">Message</span>
+    </div>
+
+    <!-- Contenu Principal -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        
+        <!-- Introduction -->
+        <div class="text-center mb-10 max-w-2xl mx-auto">
+            <h2 class="text-3xl font-bold text-slate-700 mb-3">Activités de la Semaine</h2>
+            <p class="text-lg text-slate-600">
+                Bienvenue. Découvrez ci-dessous le programme des animations proposées à nos résidents.
+            </p>
+        </div>
+
+        <!-- Interface Admin (Cachée par défaut) -->
+        <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h3 class="text-xl font-bold text-emerald-700 flex items-center gap-2">
+                    <i class="fas fa-edit"></i> Ajouter une activité
+                </h3>
+                <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded">Mode Édition</span>
+            </div>
+            
+            <form id="addActivityForm" onsubmit="addActivity(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                
+                <!-- Jour -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Jour</label>
+                    <select id="inputDay" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        <option value="Lundi">Lundi</option>
+                        <option value="Mardi">Mardi</option>
+                        <option value="Mercredi">Mercredi</option>
+                        <option value="Jeudi">Jeudi</option>
+                        <option value="Vendredi">Vendredi</option>
+                        <option value="Samedi">Samedi</option>
+                        <option value="Dimanche">Dimanche</option>
+                    </select>
+                </div>
+
+                <!-- Heure -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Heure</label>
+                    <input type="time" id="inputTime" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <!-- Type -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                    <select id="inputType" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+                        <option value="sport">Gym / Physique</option>
+                        <option value="cognitive">Mémoire / Jeux</option>
+                        <option value="creative">Art / Créatif</option>
+                        <option value="music">Musique / Chant</option>
+                        <option value="food">Goûter / Repas</option>
+                        <option value="social">Sortie / Social</option>
+                    </select>
+                </div>
+
+                <!-- Titre -->
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nom de l'activité</label>
+                    <input type="text" id="inputTitle" placeholder="Ex: Loto géant" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <!-- Description -->
+                <div class="lg:col-span-5">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Description / Lieu (Optionnel)</label>
+                    <input type="text" id="inputDesc" placeholder="Ex: Grand Salon" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <!-- Bouton Ajouter -->
+                <div class="lg:col-span-5 flex justify-end">
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2">
+                        <i class="fas fa-plus-circle"></i> Ajouter au planning
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Grille du Planning -->
+        <div id="scheduleGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+            <!-- Le contenu sera injecté ici par JS -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-300 py-8 mt-10">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2 font-serif text-lg">EHPAD - Claudette Chesne</p>
+            <p class="text-sm text-slate-400">Pour toute information : 04 76 63 34 30</p>
+            <p class="text-xs text-slate-500 mt-4">&copy; 2026 - Gestion Planning EHPAD</p>
+        </div>
+    </footer>
+
+    <!-- Modal de Connexion -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 animate-fade-in-up">
+            <div class="text-center mb-6">
+                <div class="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-600">
+                    <i class="fas fa-user-shield text-3xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800">Accès Administrateur</h3>
+                <p class="text-slate-500 text-sm">Veuillez entrer le mot de passe pour modifier le planning.</p>
+            </div>
+            <form onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <input type="password" id="passwordInput" placeholder="Mot de passe" class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-center text-lg">
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeLoginModal()" class="flex-1 py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition">Annuler</button>
+                    <button type="submit" class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition shadow-md">Valider</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Configuration & Données ---
+        
+        const PASSWORD_HASH = "a0f6b1c5f6300240814fbcabecd15da01f7de602e4a2522cd74af5320b040161";
+
+        // Icones et couleurs par type d'activité
+        const activityTypes = {
+            sport: { icon: 'fa-dumbbell', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+            cognitive: { icon: 'fa-brain', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+            creative: { icon: 'fa-palette', color: 'bg-pink-100 text-pink-700 border-pink-200' },
+            music: { icon: 'fa-music', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+            food: { icon: 'fa-coffee', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+            social: { icon: 'fa-users', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+        };
+
+        const daysOrder = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+        // Données par défaut si le LocalStorage est vide
+        const defaultActivities = [
+            { id: 1, day: 'Lundi', time: '10:30', title: 'Gym Douce', desc: 'Grand Salon - Réveil musculaire', type: 'sport' },
+            { id: 2, day: 'Lundi', time: '15:00', title: 'Atelier Mémoire', desc: 'Bibliothèque', type: 'cognitive' },
+            { id: 3, day: 'Mardi', time: '11:00', title: 'Chorale', desc: 'Salle de musique', type: 'music' },
+            { id: 4, day: 'Mardi', time: '16:00', title: 'Goûter Anniversaires', desc: 'Restaurant', type: 'food' },
+            { id: 5, day: 'Mercredi', time: '14:30', title: 'Loto', desc: 'Salle commune', type: 'social' },
+            { id: 6, day: 'Jeudi', time: '10:30', title: 'Art Floral', desc: 'Atelier créatif', type: 'creative' },
+            { id: 7, day: 'Vendredi', time: '15:30', title: 'Cinéma Club', desc: 'Salle TV - Film Classique', type: 'social' },
+            { id: 8, day: 'Dimanche', time: '11:00', title: 'Messe / Temps spirituel', desc: 'Chapelle', type: 'social' },
+        ];
+
+        // État de l'application
+        let activities = [];
+        let isAdmin = false;
+
+        // --- Initialisation ---
+
+        window.onload = function() {
+            loadActivities();
+            renderSchedule();
+            
+            // --- OUTIL TEMPORAIRE POUR VOUS AIDER ---
+            // Ceci génère le hash de votre mot de passe dans la console
+            sha256("Claudette1995<3").then(hash => {
+                console.log("%c IMPORTANT - VOICI VOTRE HASH : ", "background: red; color: white; font-size: 20px");
+                console.log("Copiez la ligne ci-dessous et remplacez la variable PASSWORD_HASH :");
+                console.log(hash);
+            });
+        };
+
+        // --- Gestion des Données (Local Storage) ---
+
+        function loadActivities() {
+            const storedData = localStorage.getItem('ehpad_activities');
+            if (storedData) {
+                activities = JSON.parse(storedData);
+            } else {
+                activities = [...defaultActivities];
+                saveActivities();
+            }
+        }
+
+        function saveActivities() {
+            localStorage.setItem('ehpad_activities', JSON.stringify(activities));
+            renderSchedule();
+        }
+
+        // --- Rendu de l'interface ---
+
+        function renderSchedule() {
+            const grid = document.getElementById('scheduleGrid');
+            grid.innerHTML = '';
+
+            daysOrder.forEach(day => {
+                const dayActivities = activities
+                    .filter(a => a.day === day)
+                    .sort((a, b) => a.time.localeCompare(b.time));
+
+                // Création de la colonne du jour
+                const dayColumn = document.createElement('div');
+                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col';
+                
+                // En-tête du jour
+                const isToday = new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
+                const headerClass = isToday ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700';
+                
+                let html = `
+                    <div class="${headerClass} p-4 border-b border-slate-200">
+                        <h3 class="text-xl font-bold capitalize flex justify-between items-center">
+                            ${day}
+                            ${isToday ? '<span class="text-xs bg-white text-emerald-600 px-2 py-1 rounded-full uppercase">Aujourd\'hui</span>' : ''}
+                        </h3>
+                    </div>
+                    <div class="p-4 space-y-4 flex-grow bg-slate-50/50">
+                `;
+
+                if (dayActivities.length === 0) {
+                    html += `
+                        <div class="text-center py-8 opacity-50">
+                            <i class="fas fa-bed text-3xl mb-2 text-slate-300"></i>
+                            <p class="text-sm text-slate-400 italic">Aucune activité prévue</p>
+                        </div>
+                    `;
+                } else {
+                    dayActivities.forEach(act => {
+                        const style = activityTypes[act.type] || activityTypes.social;
+                        
+                        html += `
+                            <div class="activity-card relative bg-white border-l-4 ${style.color.split(' ')[2]} rounded-r-lg shadow-sm p-3 flex gap-3 items-start">
+                                <div class="${style.color.split(' ')[0]} ${style.color.split(' ')[1]} w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                                    <i class="fas ${style.icon}"></i>
+                                </div>
+                                <div class="flex-grow">
+                                    <div class="flex justify-between items-start">
+                                        <span class="font-bold text-slate-800 text-lg">${act.time}</span>
+                                        ${isAdmin ? `<button onclick="deleteActivity(${act.id})" class="text-red-400 hover:text-red-600 transition p-1" title="Supprimer"><i class="fas fa-trash-alt"></i></button>` : ''}
+                                    </div>
+                                    <h4 class="font-bold text-slate-700 leading-tight">${act.title}</h4>
+                                    ${act.desc ? `<p class="text-sm text-slate-500 mt-1">${act.desc}</p>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                html += `</div>`; // Fin du corps
+                dayColumn.innerHTML = html;
+                grid.appendChild(dayColumn);
+            });
+        }
+
+        // --- Logique Admin ---
+
+        function toggleAdminPanel() {
+            if (isAdmin) {
+                document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('loginModal').classList.remove('hidden');
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        // Fonction de hachage SHA-256
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const passInput = document.getElementById('passwordInput').value;
+            
+            // Calcul du hash de l'entrée utilisateur
+            const hashInput = await sha256(passInput);
+
+            // Comparaison avec le hash stocké
+            if (hashInput === PASSWORD_HASH) {
+                isAdmin = true;
+                updateAdminUI();
+                closeLoginModal();
+                showToast('Bienvenue, mode administrateur activé.', 'success');
+            } else {
+                showToast('Mot de passe incorrect.', 'error');
+                document.getElementById('passwordInput').classList.add('border-red-500', 'ring-2', 'ring-red-200');
+                setTimeout(() => document.getElementById('passwordInput').classList.remove('border-red-500', 'ring-2', 'ring-red-200'), 2000);
+            }
+        }
+
+        function logout() {
+            isAdmin = false;
+            updateAdminUI();
+            showToast('Déconnexion réussie.', 'info');
+        }
+
+        function updateAdminUI() {
+            const adminPanel = document.getElementById('adminPanel');
+            const authBtn = document.getElementById('authBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            if (isAdmin) {
+                adminPanel.classList.remove('hidden');
+                authBtn.classList.add('hidden');
+                logoutBtn.classList.remove('hidden');
+            } else {
+                adminPanel.classList.add('hidden');
+                authBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+            }
+            renderSchedule();
+        }
+
+        // --- Opérations CRUD ---
+
+        function addActivity(e) {
+            e.preventDefault();
+            
+            const newActivity = {
+                id: Date.now(),
+                day: document.getElementById('inputDay').value,
+                time: document.getElementById('inputTime').value,
+                type: document.getElementById('inputType').value,
+                title: document.getElementById('inputTitle').value,
+                desc: document.getElementById('inputDesc').value
+            };
+
+            activities.push(newActivity);
+            saveActivities();
+            
+            document.getElementById('addActivityForm').reset();
+            showToast('Activité ajoutée avec succès !', 'success');
+        }
+
+        function deleteActivity(id) {
+            if(confirm('Êtes-vous sûr de vouloir supprimer cette activité ?')) {
+                activities = activities.filter(a => a.id !== id);
+                saveActivities();
+                showToast('Activité supprimée.', 'info');
+            }
+        }
+
+        // --- Utilitaires ---
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            
+            toastMsg.innerText = message;
+            
+            if (type === 'error') {
+                toast.className = "fixed top-24 right-5 bg-red-600 text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50 transition-all duration-300";
+            } else if (type === 'success') {
+                toast.className = "fixed top-24 right-5 bg-emerald-700 text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50 transition-all duration-300";
+            } else {
+                toast.className = "fixed top-24 right-5 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50 transition-all duration-300";
+            }
+
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+    </script>
+</body>
+</html>
