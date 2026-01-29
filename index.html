@@ -85,6 +85,12 @@
                         <option value="music">Musique / Chant</option>
                         <option value="food">Goûter / Repas</option>
                         <option value="social">Sortie / Social</option>
+                        <option value="social">Social / Discussion</option>
+                        <option value="outing">Sortie Extérieure</option>
+                        <option value="festive">Festive / Fête</option>
+                        <option value="sensory">Sensorielle</option>
+                        <option value="animal">Médiation Animale</option>
+                        <option value="religious">Religieux / Culte</option>
                     </select>
                 </div>
                 <div class="lg:col-span-2">
@@ -163,6 +169,12 @@
             music: { icon: 'fa-music', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
             food: { icon: 'fa-coffee', color: 'bg-orange-100 text-orange-700 border-orange-200' },
             social: { icon: 'fa-users', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+            social: { icon: 'fa-comments', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+            outing: { icon: 'fa-bus', color: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
+            festive: { icon: 'fa-glass-cheers', color: 'bg-red-100 text-red-700 border-red-200' },
+            sensory: { icon: 'fa-hand-sparkles', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+            animal: { icon: 'fa-paw', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+            religious: { icon: 'fa-church', color: 'bg-violet-100 text-violet-700 border-violet-200' },
         };
 
         // --- ÉCOUTE EN TEMPS RÉEL ---
@@ -298,7 +310,7 @@
                 document.getElementById('logoutBtn').classList.remove('hidden');
                 closeLoginModal();
                 showToast('Mode Admin Connecté', 'success');
-
+                renderSchedule(currentActivities); // Bouton poubelles
                 if(db) {
 
                 }
@@ -326,5 +338,4 @@
     </script>
 </body>
 </html>
-
 
