@@ -160,6 +160,8 @@
         const PASSWORD_HASH = "a0f6b1c5f6300240814fbcabecd15da01f7de602e4a2522cd74af5320b040161"; 
         
         let isAdmin = false;
+        let currentActivities = []; // On stocke les données pour pouvoir recharger l'affichage instantanément
+
         const daysOrder = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
         const activityTypes = {
             sport: { icon: 'fa-dumbbell', color: 'bg-blue-100 text-blue-700 border-blue-200' },
@@ -179,11 +181,11 @@
         if(db) {
             const q = query(collection(db, "activities"));
             onSnapshot(q, (snapshot) => {
-                const activities = [];
+                currentActivities = []; // Reset du tableau local
                 snapshot.forEach((doc) => {
-                    activities.push({ ...doc.data(), id: doc.id });
+                    currentActivities.push({ ...doc.data(), id: doc.id });
                 });
-                renderSchedule(activities);
+                renderSchedule(currentActivities);
             }, (error) => {
                 console.error("Erreur lecture:", error);
                 if(error.code === 'permission-denied') {
@@ -308,10 +310,8 @@
                 document.getElementById('logoutBtn').classList.remove('hidden');
                 closeLoginModal();
                 showToast('Mode Admin Connecté', 'success');
-                renderSchedule(currentActivities); // Bouton poubelles
-                if(db) {
-
-                }
+                // CORRECTION MAJEURE ICI : On force le redessin AVEC les boutons immédiatement
+                renderSchedule(currentActivities); 
             } else {
                 showToast('Mot de passe incorrect', 'error');
             }
@@ -323,7 +323,8 @@
             document.getElementById('authBtn').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.add('hidden');
             showToast('Déconnexion', 'info');
-            location.reload(); 
+            // CORRECTION MAJEURE ICI : Au lieu de recharger la page, on redessine SANS les boutons
+            renderSchedule(currentActivities); 
         };
 
         window.showToast = (message, type = 'info') => {
@@ -336,5 +337,3 @@
     </script>
 </body>
 </html>
-
-
