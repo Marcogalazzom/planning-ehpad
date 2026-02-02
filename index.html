@@ -179,6 +179,27 @@
             cinema: { icon: 'fa-film', color: 'bg-teal-100 text-teal-700 border-teal-200' },
         };
 
+        // --- NOUVEAU : Calcul des dates de la semaine en cours ---
+        function getWeekDates() {
+            const dates = {};
+            const curr = new Date();
+            // On s'assure de partir de Lundi (Si Dimanche = 0, on le traite comme 7)
+            const dayOfWeek = curr.getDay() === 0 ? 7 : curr.getDay(); 
+            const first = curr.getDate() - dayOfWeek + 1; // Le jour du mois du Lundi de cette semaine
+
+            daysOrder.forEach((day, index) => {
+                const next = new Date(curr.setDate(first + index)); // On calcule la date pour chaque jour
+                // Formatage : jour/mois (ex: 02/02)
+                const dateString = next.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+                dates[day] = dateString;
+                
+                // On reset la date "curr" à aujourd'hui pour le prochain tour de boucle 
+                // (car setDate modifie l'objet original)
+                curr.setTime(new Date().getTime()); 
+            });
+            return dates;
+        }
+
         // --- ÉCOUTE EN TEMPS RÉEL ---
         if(db) {
             const q = query(collection(db, "activities"));
@@ -237,6 +258,9 @@
         function renderSchedule(activities) {
             const grid = document.getElementById('scheduleGrid');
             grid.innerHTML = '';
+            
+            // On récupère les dates
+            const weekDates = getWeekDates();
 
             daysOrder.forEach(day => {
                 const dayActivities = activities
@@ -248,10 +272,12 @@
                 const isToday = new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
                 const headerClass = isToday ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700';
                 
+                // On ajoute la date à côté du jour
                 let html = `
                     <div class="${headerClass} p-4 border-b border-slate-200">
                         <h3 class="text-xl font-bold capitalize flex justify-between items-center">
-                            ${day} ${isToday ? '<span class="text-xs bg-white text-emerald-600 px-2 py-1 rounded-full uppercase">Aujourd\'hui</span>' : ''}
+                            <span>${day} <span class="opacity-70 text-base font-normal ml-1">${weekDates[day]}</span></span>
+                            ${isToday ? '<span class="text-xs bg-white text-emerald-600 px-2 py-1 rounded-full uppercase">Aujourd\'hui</span>' : ''}
                         </h3>
                     </div>
                     <div class="p-4 space-y-4 flex-grow bg-slate-50/50">
@@ -339,4 +365,5 @@
     </script>
 </body>
 </html>
+
 
