@@ -55,7 +55,8 @@
         <!-- Interface Admin -->
         <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <h3 class="text-xl font-bold text-emerald-700 flex items-center gap-2"><i class="fas fa-edit"></i> Ajouter une activité</h3>
+                <!-- Titre dynamique (Ajouter / Modifier) -->
+                <h3 id="formTitle" class="text-xl font-bold text-emerald-700 flex items-center gap-2"><i class="fas fa-edit"></i> Ajouter une activité</h3>
                 <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded">Mode Édition</span>
             </div>
             
@@ -101,9 +102,14 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
                     <input type="text" id="inputDesc" placeholder="Lieu..." class="w-full p-2 border border-slate-300 rounded-lg">
                 </div>
-                <div class="lg:col-span-5 flex justify-end">
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2">
-                        <i class="fas fa-plus-circle"></i> Ajouter
+                
+                <!-- Zone Boutons Formulaire -->
+                <div class="lg:col-span-5 flex justify-end gap-3">
+                    <button type="button" id="cancelBtn" onclick="cancelEdit()" class="hidden bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold py-2 px-6 rounded-lg transition">
+                        Annuler
+                    </button>
+                    <button type="submit" id="submitBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2">
+                        <i class="fas fa-plus-circle"></i> <span>Ajouter</span>
                     </button>
                 </div>
             </form>
@@ -134,7 +140,7 @@
     <script type="module">
         // Import des fonctions Firebase 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } 
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -162,8 +168,10 @@
         
         let isAdmin = false;
         let currentActivities = []; // On stocke les données pour pouvoir recharger l'affichage instantanément
+        let editingId = null; // ID de l'activité en cours de modification
 
         const daysOrder = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+        
         const activityTypes = {
             sport: { icon: 'fa-dumbbell', color: 'bg-blue-100 text-blue-700 border-blue-200' },
             cognitive: { icon: 'fa-brain', color: 'bg-purple-100 text-purple-700 border-purple-200' },
@@ -179,7 +187,7 @@
             cinema: { icon: 'fa-film', color: 'bg-teal-100 text-teal-700 border-teal-200' },
         };
 
-        // --- NOUVEAU : Calcul des dates de la semaine en cours ---
+        // --- Calcul des dates de la semaine en cours ---
         function getWeekDates() {
             const dates = {};
             const curr = new Date();
@@ -192,9 +200,6 @@
                 // Formatage : jour/mois (ex: 02/02)
                 const dateString = next.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
                 dates[day] = dateString;
-                
-                // On reset la date "curr" à aujourd'hui pour le prochain tour de boucle 
-                // (car setDate modifie l'objet original)
                 curr.setTime(new Date().getTime()); 
             });
             return dates;
@@ -217,7 +222,7 @@
             });
         }
 
-        // Fonction d'ajout
+        // --- Gestion du Formulaire (Ajout / Modif) ---
         document.getElementById('addActivityForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if(!db) return;
@@ -228,22 +233,74 @@
                 type: document.getElementById('inputType').value,
                 title: document.getElementById('inputTitle').value,
                 desc: document.getElementById('inputDesc').value,
-                createdAt: Date.now()
+                createdAt: Date.now() // (Optionnel pour l'update, mais on le laisse)
             };
 
             try {
-                await addDoc(collection(db, "activities"), newActivity);
-                document.getElementById('addActivityForm').reset();
-                showToast('Activité sauvegardée en ligne !', 'success');
+                if (editingId) {
+                    // MODE MODIFICATION
+                    await updateDoc(doc(db, "activities", editingId), newActivity);
+                    showToast('Activité modifiée avec succès !', 'success');
+                } else {
+                    // MODE AJOUT
+                    await addDoc(collection(db, "activities"), newActivity);
+                    showToast('Activité ajoutée avec succès !', 'success');
+                }
+                
+                // Réinitialiser le formulaire
+                cancelEdit(); 
+
             } catch (e) {
-                console.error("Erreur ajout: ", e);
-                showToast("Erreur lors de l'ajout", "error");
+                console.error("Erreur opération: ", e);
+                showToast("Erreur lors de l'enregistrement", "error");
             }
         });
 
-        // Fonction de suppression (attachée à window pour le onclick HTML)
+        // --- Fonctions d'Édition ---
+        
+        // Appelé quand on clique sur le bouton Crayon
+        window.editActivity = (id) => {
+            const activity = currentActivities.find(a => a.id === id);
+            if (!activity) return;
+
+            // Remplir le formulaire
+            document.getElementById('inputDay').value = activity.day;
+            document.getElementById('inputTime').value = activity.time;
+            document.getElementById('inputType').value = activity.type;
+            document.getElementById('inputTitle').value = activity.title;
+            document.getElementById('inputDesc').value = activity.desc || '';
+
+            // Changer l'état visuel du formulaire
+            editingId = id;
+            document.getElementById('formTitle').innerHTML = '<i class="fas fa-pen"></i> Modifier l\'activité';
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> <span>Modifier</span>';
+            document.getElementById('submitBtn').classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+            document.getElementById('submitBtn').classList.add('bg-blue-600', 'hover:bg-blue-700');
+            document.getElementById('cancelBtn').classList.remove('hidden');
+
+            // Scroll vers le formulaire pour faciliter la vie sur mobile
+            document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        // Annuler l'édition
+        window.cancelEdit = () => {
+            editingId = null;
+            document.getElementById('addActivityForm').reset();
+            
+            // Remettre le style par défaut "Ajouter"
+            document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit"></i> Ajouter une activité';
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-plus-circle"></i> <span>Ajouter</span>';
+            document.getElementById('submitBtn').classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            document.getElementById('submitBtn').classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            document.getElementById('cancelBtn').classList.add('hidden');
+        };
+
+        // --- Fonctions de Suppression ---
         window.deleteActivity = async (id) => {
             if(confirm('Supprimer définitivement cette activité ?')) {
+                // Si on supprime l'activité qu'on est en train d'éditer, on reset le form
+                if (editingId === id) cancelEdit();
+                
                 try {
                     await deleteDoc(doc(db, "activities", id));
                     showToast('Activité supprimée.', 'info');
@@ -259,7 +316,6 @@
             const grid = document.getElementById('scheduleGrid');
             grid.innerHTML = '';
             
-            // On récupère les dates
             const weekDates = getWeekDates();
 
             daysOrder.forEach(day => {
@@ -272,7 +328,6 @@
                 const isToday = new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
                 const headerClass = isToday ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700';
                 
-                // On ajoute la date à côté du jour
                 let html = `
                     <div class="${headerClass} p-4 border-b border-slate-200">
                         <h3 class="text-xl font-bold capitalize flex justify-between items-center">
@@ -288,6 +343,15 @@
                 } else {
                     dayActivities.forEach(act => {
                         const style = activityTypes[act.type] || activityTypes.social;
+                        
+                        // Boutons d'action (Modif + Suppr)
+                        const adminActions = isAdmin ? `
+                            <div class="flex gap-1">
+                                <button onclick="editActivity('${act.id}')" class="text-blue-400 hover:text-blue-600 transition p-1" title="Modifier"><i class="fas fa-pen"></i></button>
+                                <button onclick="deleteActivity('${act.id}')" class="text-red-400 hover:text-red-600 transition p-1" title="Supprimer"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        ` : '';
+
                         html += `
                             <div class="activity-card relative bg-white border-l-4 ${style.color.split(' ')[2]} rounded-r-lg shadow-sm p-3 flex gap-3 items-start">
                                 <div class="${style.color.split(' ')[0]} ${style.color.split(' ')[1]} w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
@@ -296,7 +360,7 @@
                                 <div class="flex-grow">
                                     <div class="flex justify-between items-start">
                                         <span class="font-bold text-slate-800 text-lg">${act.time}</span>
-                                        ${isAdmin ? `<button onclick="deleteActivity('${act.id}')" class="text-red-400 hover:text-red-600 transition p-1"><i class="fas fa-trash-alt"></i></button>` : ''}
+                                        ${adminActions}
                                     </div>
                                     <h4 class="font-bold text-slate-700 leading-tight">${act.title}</h4>
                                     ${act.desc ? `<p class="text-sm text-slate-500 mt-1">${act.desc}</p>` : ''}
@@ -338,7 +402,6 @@
                 document.getElementById('logoutBtn').classList.remove('hidden');
                 closeLoginModal();
                 showToast('Mode Admin Connecté', 'success');
-                // CORRECTION MAJEURE ICI : On force le redessin AVEC les boutons immédiatement
                 renderSchedule(currentActivities); 
             } else {
                 showToast('Mot de passe incorrect', 'error');
@@ -347,11 +410,12 @@
 
         window.logout = () => {
             isAdmin = false;
+            // On s'assure de sortir proprement du mode édition si on était dedans
+            cancelEdit();
             document.getElementById('adminPanel').classList.add('hidden');
             document.getElementById('authBtn').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.add('hidden');
             showToast('Déconnexion', 'info');
-            // CORRECTION MAJEURE ICI : Au lieu de recharger la page, on redessine SANS les boutons
             renderSchedule(currentActivities); 
         };
 
@@ -365,5 +429,3 @@
     </script>
 </body>
 </html>
-
-
