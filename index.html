@@ -11,9 +11,15 @@
     <style>
         body { font-family: 'Lato', sans-serif; background-color: #f8fafc; }
         h1, h2, h3 { font-family: 'Playfair Display', serif; }
-        .activity-card { transition: all 0.3s ease; }
+        .activity-card { transition: all 0.2s ease; }
         .activity-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         button:focus { outline: 3px solid #facc15; outline-offset: 2px; }
+        
+        /* Style pour le Drag & Drop */
+        .draggable-source { opacity: 0.4; border: 2px dashed #059669; }
+        .drop-zone-active { background-color: #ecfdf5 !important; border: 2px dashed #34d399 !important; }
+        .cursor-grab { cursor: grab; }
+        .cursor-grabbing { cursor: grabbing; }
     </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col">
@@ -49,13 +55,11 @@
     <main class="flex-grow container mx-auto px-4 py-8">
         <div class="text-center mb-10 max-w-2xl mx-auto">
             <h2 class="text-3xl font-bold text-slate-700 mb-3">Activités de la Semaine</h2>
-            <p class="text-lg text-slate-600">Les mises à jour sont automatiques sur tous les appareils.</p>
         </div>
 
         <!-- Interface Admin -->
         <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <!-- Titre dynamique (Ajouter / Modifier) -->
                 <h3 id="formTitle" class="text-xl font-bold text-emerald-700 flex items-center gap-2"><i class="fas fa-edit"></i> Ajouter une activité</h3>
                 <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded">Mode Édition</span>
             </div>
@@ -102,8 +106,6 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
                     <input type="text" id="inputDesc" placeholder="Lieu..." class="w-full p-2 border border-slate-300 rounded-lg">
                 </div>
-                
-                <!-- Zone Boutons Formulaire -->
                 <div class="lg:col-span-5 flex justify-end gap-3">
                     <button type="button" id="cancelBtn" onclick="cancelEdit()" class="hidden bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold py-2 px-6 rounded-lg transition">
                         Annuler
@@ -138,7 +140,6 @@
 
     <!-- Configuration Firebase et Logique -->
     <script type="module">
-        // Import des fonctions Firebase 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -152,23 +153,20 @@
             appId: "1:684072154752:web:4bc6847277141dcfe41865"
         };
 
-        // Initialisation de Firebase
         let db;
         try {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
-            console.log("Firebase connecté avec succès");
+            console.log("Firebase connecté");
         } catch (error) {
-            console.error("Erreur Firebase:", error);
-            showToast("Erreur de configuration Firebase", "error");
+            console.error("Erreur:", error);
+            showToast("Erreur Firebase", "error");
         }
 
-        // Configuration App
         const PASSWORD_HASH = "a0f6b1c5f6300240814fbcabecd15da01f7de602e4a2522cd74af5320b040161"; 
-        
         let isAdmin = false;
-        let currentActivities = []; // On stocke les données pour pouvoir recharger l'affichage instantanément
-        let editingId = null; // ID de l'activité en cours de modification
+        let currentActivities = [];
+        let editingId = null;
 
         const daysOrder = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
         
@@ -187,17 +185,14 @@
             cinema: { icon: 'fa-film', color: 'bg-teal-100 text-teal-700 border-teal-200' },
         };
 
-        // --- Calcul des dates de la semaine en cours ---
         function getWeekDates() {
             const dates = {};
             const curr = new Date();
-            // On s'assure de partir de Lundi (Si Dimanche = 0, on le traite comme 7)
             const dayOfWeek = curr.getDay() === 0 ? 7 : curr.getDay(); 
-            const first = curr.getDate() - dayOfWeek + 1; // Le jour du mois du Lundi de cette semaine
+            const first = curr.getDate() - dayOfWeek + 1; 
 
             daysOrder.forEach((day, index) => {
-                const next = new Date(curr.setDate(first + index)); // On calcule la date pour chaque jour
-                // Formatage : jour/mois (ex: 02/02)
+                const next = new Date(curr.setDate(first + index)); 
                 const dateString = next.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
                 dates[day] = dateString;
                 curr.setTime(new Date().getTime()); 
@@ -205,24 +200,63 @@
             return dates;
         }
 
-        // --- ÉCOUTE EN TEMPS RÉEL ---
         if(db) {
             const q = query(collection(db, "activities"));
             onSnapshot(q, (snapshot) => {
-                currentActivities = []; // Reset du tableau local
+                currentActivities = [];
                 snapshot.forEach((doc) => {
                     currentActivities.push({ ...doc.data(), id: doc.id });
                 });
                 renderSchedule(currentActivities);
-            }, (error) => {
-                console.error("Erreur lecture:", error);
-                if(error.code === 'permission-denied') {
-                    showToast("Erreur de permission. Vérifiez les règles Firestore.", "error");
-                }
             });
         }
 
-        // --- Gestion du Formulaire (Ajout / Modif) ---
+        // --- DRAG AND DROP FUNCTIONS ---
+        
+        window.drag = (ev, id) => {
+            if (!isAdmin) return;
+            ev.dataTransfer.setData("text", id);
+            ev.target.classList.add("draggable-source");
+        }
+
+        window.allowDrop = (ev) => {
+            if (!isAdmin) return;
+            ev.preventDefault();
+            const dropZone = ev.currentTarget;
+            dropZone.classList.add("drop-zone-active");
+        }
+
+        window.leaveDrop = (ev) => {
+            const dropZone = ev.currentTarget;
+            dropZone.classList.remove("drop-zone-active");
+        }
+
+        window.drop = async (ev, newDay) => {
+            if (!isAdmin) return;
+            ev.preventDefault();
+            const dropZone = ev.currentTarget;
+            dropZone.classList.remove("drop-zone-active");
+            
+            const activityId = ev.dataTransfer.getData("text");
+            const activity = currentActivities.find(a => a.id === activityId);
+
+            // Retirer l'effet visuel de la source
+            const sourceElement = document.querySelector('.draggable-source');
+            if(sourceElement) sourceElement.classList.remove('draggable-source');
+
+            if (activity && activity.day !== newDay) {
+                try {
+                    await updateDoc(doc(db, "activities", activityId), { day: newDay });
+                    showToast(`Déplacé vers ${newDay}`, 'success');
+                } catch (e) {
+                    console.error("Erreur déplacement:", e);
+                    showToast("Erreur lors du déplacement", "error");
+                }
+            }
+        }
+
+        // --- Logique Standard ---
+
         document.getElementById('addActivityForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if(!db) return;
@@ -233,89 +267,64 @@
                 type: document.getElementById('inputType').value,
                 title: document.getElementById('inputTitle').value,
                 desc: document.getElementById('inputDesc').value,
-                createdAt: Date.now() // (Optionnel pour l'update, mais on le laisse)
+                createdAt: Date.now()
             };
 
             try {
                 if (editingId) {
-                    // MODE MODIFICATION
                     await updateDoc(doc(db, "activities", editingId), newActivity);
-                    showToast('Activité modifiée avec succès !', 'success');
+                    showToast('Activité modifiée !', 'success');
                 } else {
-                    // MODE AJOUT
                     await addDoc(collection(db, "activities"), newActivity);
-                    showToast('Activité ajoutée avec succès !', 'success');
+                    showToast('Activité ajoutée !', 'success');
                 }
-                
-                // Réinitialiser le formulaire
                 cancelEdit(); 
-
             } catch (e) {
-                console.error("Erreur opération: ", e);
-                showToast("Erreur lors de l'enregistrement", "error");
+                console.error("Erreur:", e);
+                showToast("Erreur", "error");
             }
         });
 
-        // --- Fonctions d'Édition ---
-        
-        // Appelé quand on clique sur le bouton Crayon
         window.editActivity = (id) => {
             const activity = currentActivities.find(a => a.id === id);
             if (!activity) return;
-
-            // Remplir le formulaire
             document.getElementById('inputDay').value = activity.day;
             document.getElementById('inputTime').value = activity.time;
             document.getElementById('inputType').value = activity.type;
             document.getElementById('inputTitle').value = activity.title;
             document.getElementById('inputDesc').value = activity.desc || '';
-
-            // Changer l'état visuel du formulaire
             editingId = id;
             document.getElementById('formTitle').innerHTML = '<i class="fas fa-pen"></i> Modifier l\'activité';
             document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> <span>Modifier</span>';
-            document.getElementById('submitBtn').classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
-            document.getElementById('submitBtn').classList.add('bg-blue-600', 'hover:bg-blue-700');
+            document.getElementById('submitBtn').className = "bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2";
             document.getElementById('cancelBtn').classList.remove('hidden');
-
-            // Scroll vers le formulaire pour faciliter la vie sur mobile
             document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
         };
 
-        // Annuler l'édition
         window.cancelEdit = () => {
             editingId = null;
             document.getElementById('addActivityForm').reset();
-            
-            // Remettre le style par défaut "Ajouter"
             document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit"></i> Ajouter une activité';
             document.getElementById('submitBtn').innerHTML = '<i class="fas fa-plus-circle"></i> <span>Ajouter</span>';
-            document.getElementById('submitBtn').classList.add('bg-emerald-600', 'hover:bg-emerald-700');
-            document.getElementById('submitBtn').classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            document.getElementById('submitBtn').className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2";
             document.getElementById('cancelBtn').classList.add('hidden');
         };
 
-        // --- Fonctions de Suppression ---
         window.deleteActivity = async (id) => {
             if(confirm('Supprimer définitivement cette activité ?')) {
-                // Si on supprime l'activité qu'on est en train d'éditer, on reset le form
                 if (editingId === id) cancelEdit();
-                
                 try {
                     await deleteDoc(doc(db, "activities", id));
                     showToast('Activité supprimée.', 'info');
                 } catch (e) {
-                    console.error("Erreur suppression: ", e);
                     showToast("Erreur de suppression", "error");
                 }
             }
         }
 
-        // --- Rendu ---
         function renderSchedule(activities) {
             const grid = document.getElementById('scheduleGrid');
             grid.innerHTML = '';
-            
             const weekDates = getWeekDates();
 
             daysOrder.forEach(day => {
@@ -324,10 +333,12 @@
                     .sort((a, b) => a.time.localeCompare(b.time));
 
                 const dayColumn = document.createElement('div');
-                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col';
+                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200';
+                
                 const isToday = new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
                 const headerClass = isToday ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700';
                 
+                // HEADER
                 let html = `
                     <div class="${headerClass} p-4 border-b border-slate-200">
                         <h3 class="text-xl font-bold capitalize flex justify-between items-center">
@@ -335,30 +346,36 @@
                             ${isToday ? '<span class="text-xs bg-white text-emerald-600 px-2 py-1 rounded-full uppercase">Aujourd\'hui</span>' : ''}
                         </h3>
                     </div>
-                    <div class="p-4 space-y-4 flex-grow bg-slate-50/50">
+                    <!-- DROP ZONE -->
+                    <div class="p-4 space-y-4 flex-grow bg-slate-50/50"
+                         ondrop="drop(event, '${day}')" 
+                         ondragover="allowDrop(event)"
+                         ondragleave="leaveDrop(event)">
                 `;
 
                 if (dayActivities.length === 0) {
-                    html += `<div class="text-center py-8 opacity-50"><i class="fas fa-bed text-3xl mb-2 text-slate-300"></i><p class="text-sm text-slate-400 italic">Aucune activité</p></div>`;
+                    html += `<div class="text-center py-8 opacity-50 pointer-events-none"><i class="fas fa-bed text-3xl mb-2 text-slate-300"></i><p class="text-sm text-slate-400 italic">Aucune activité</p></div>`;
                 } else {
                     dayActivities.forEach(act => {
                         const style = activityTypes[act.type] || activityTypes.social;
-                        
-                        // Boutons d'action (Modif + Suppr)
                         const adminActions = isAdmin ? `
                             <div class="flex gap-1">
                                 <button onclick="editActivity('${act.id}')" class="text-blue-400 hover:text-blue-600 transition p-1" title="Modifier"><i class="fas fa-pen"></i></button>
                                 <button onclick="deleteActivity('${act.id}')" class="text-red-400 hover:text-red-600 transition p-1" title="Supprimer"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         ` : '';
+                        
+                        // Ajout des attributs Drag & Drop sur la carte
+                        const draggableAttr = isAdmin ? `draggable="true" ondragstart="drag(event, '${act.id}')"` : '';
+                        const cursorClass = isAdmin ? 'cursor-grab active:cursor-grabbing' : '';
 
                         html += `
-                            <div class="activity-card relative bg-white border-l-4 ${style.color.split(' ')[2]} rounded-r-lg shadow-sm p-3 flex gap-3 items-start">
-                                <div class="${style.color.split(' ')[0]} ${style.color.split(' ')[1]} w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <div class="activity-card relative bg-white border-l-4 ${style.color.split(' ')[2]} rounded-r-lg shadow-sm p-3 flex gap-3 items-start ${cursorClass}" ${draggableAttr}>
+                                <div class="${style.color.split(' ')[0]} ${style.color.split(' ')[1]} w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1 pointer-events-none">
                                     <i class="fas ${style.icon}"></i>
                                 </div>
-                                <div class="flex-grow">
-                                    <div class="flex justify-between items-start">
+                                <div class="flex-grow pointer-events-none"> <!-- Pointer events none pour éviter de grab le texte -->
+                                    <div class="flex justify-between items-start pointer-events-auto">
                                         <span class="font-bold text-slate-800 text-lg">${act.time}</span>
                                         ${adminActions}
                                     </div>
@@ -374,8 +391,6 @@
             });
         }
 
-        // --- Auth & UI Helpers ---
-        
         window.toggleAdminPanel = () => {
             if (isAdmin) document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
             else {
@@ -390,7 +405,6 @@
         window.handleLogin = async (e) => {
             e.preventDefault();
             const passInput = document.getElementById('passwordInput').value;
-            
             const msgBuffer = new TextEncoder().encode(passInput);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
             const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -410,7 +424,6 @@
 
         window.logout = () => {
             isAdmin = false;
-            // On s'assure de sortir proprement du mode édition si on était dedans
             cancelEdit();
             document.getElementById('adminPanel').classList.add('hidden');
             document.getElementById('authBtn').classList.remove('hidden');
