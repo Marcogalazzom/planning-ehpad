@@ -69,7 +69,7 @@
     <main class="flex-grow container mx-auto px-4 py-8">
         
         <!-- Interface Admin -->
-        <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10">
+        <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10 scroll-mt-48">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
                 <h3 id="formTitle" class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-edit"></i> Ajouter une activité</h3>
                 <span id="adminBadge" class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded">Mode Édition</span>
@@ -207,6 +207,14 @@
             hasScrolledToToday = false; 
             renderSchedule();
             cancelEdit(); 
+            
+            // Si on est admin, on force le scroll vers le formulaire
+            if (isAdmin) {
+                setTimeout(() => {
+                    const adminPanel = document.getElementById('adminPanel');
+                    if (adminPanel) adminPanel.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
         };
 
         function updateTheme(unit) {
@@ -229,7 +237,7 @@
                 btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700";
                 btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
                 
-                subTitle.innerText = "Planning Général EHPAD";
+                subTitle.innerText = "Planning des activités";
                 
                 if(submitBtn) {
                     submitBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
@@ -250,7 +258,7 @@
                 btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-amber-700";
                 btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
 
-                subTitle.innerText = "Planning Unité PASA";
+                subTitle.innerText = "Planning PASA";
 
                 if(submitBtn) {
                     submitBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
@@ -339,7 +347,7 @@
                 type: document.getElementById('inputType').value,
                 title: document.getElementById('inputTitle').value,
                 desc: document.getElementById('inputDesc').value,
-                unit: currentUnit, 
+                unit: currentUnit, // IMPORTANT : On enregistre dans l'unité active
                 createdAt: Date.now()
             };
 
@@ -409,7 +417,7 @@
                     .filter(a => a.day === day)
                     .sort((a, b) => a.time.localeCompare(b.time));
 
-                // Ajout de la classe scroll-mt-40 (10rem) pour le scroll automatique ajusté
+                // Classe scroll-mt-40 pour ajuster la marge du scroll
                 const dayColumn = document.createElement('div');
                 dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-40';
                 
@@ -468,7 +476,8 @@
                 grid.appendChild(dayColumn);
             });
 
-            if (!hasScrolledToToday) {
+            // Scroll Auto - UNIQUEMENT SI PAS ADMIN
+            if (!hasScrolledToToday && !isAdmin) {
                 setTimeout(() => {
                     const todayElement = document.getElementById('today-column');
                     if (todayElement) todayElement.scrollIntoView({ behavior: 'smooth' });
@@ -477,6 +486,7 @@
             }
         }
 
+        // --- AUTH ---
         window.toggleAdminPanel = () => {
             if (isAdmin) document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
             else {
@@ -503,6 +513,11 @@
                 closeLoginModal();
                 showToast('Mode Admin Connecté', 'success');
                 renderSchedule(); 
+                
+                // AJOUT : Scroll vers le formulaire admin
+                setTimeout(() => {
+                    document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
+                }, 300);
             } else {
                 showToast('Mot de passe incorrect', 'error');
             }
