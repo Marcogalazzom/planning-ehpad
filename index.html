@@ -409,9 +409,9 @@
                     .filter(a => a.day === day)
                     .sort((a, b) => a.time.localeCompare(b.time));
 
-                // Ajout de la classe scroll-mt-48 (12rem) pour le scroll automatique ajusté
+                // Ajout de la classe scroll-mt-40 (10rem) pour le scroll automatique ajusté
                 const dayColumn = document.createElement('div');
-                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-48';
+                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-40';
                 
                 const isToday = new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
                 if (isToday) dayColumn.id = 'today-column';
@@ -528,4 +528,3 @@
     </script>
 </body>
 </html>
-
