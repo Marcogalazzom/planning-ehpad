@@ -229,7 +229,7 @@
                 btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700";
                 btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
                 
-                subTitle.innerText = "Planning Général EHPAD";
+                subTitle.innerText = "Planning Animation";
                 
                 if(submitBtn) {
                     submitBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
@@ -250,7 +250,7 @@
                 btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-amber-700";
                 btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
 
-                subTitle.innerText = "Planning Unité PASA";
+                subTitle.innerText = "Planning PASA";
 
                 if(submitBtn) {
                     submitBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
@@ -339,7 +339,7 @@
                 type: document.getElementById('inputType').value,
                 title: document.getElementById('inputTitle').value,
                 desc: document.getElementById('inputDesc').value,
-                unit: currentUnit, 
+                unit: currentUnit, // IMPORTANT : On enregistre dans l'unité active
                 createdAt: Date.now()
             };
 
@@ -409,7 +409,7 @@
                     .filter(a => a.day === day)
                     .sort((a, b) => a.time.localeCompare(b.time));
 
-                // Ajout de la classe scroll-mt-40 (10rem) pour le scroll automatique ajusté
+                // Classe scroll-mt-40 pour ajuster la marge du scroll
                 const dayColumn = document.createElement('div');
                 dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-40';
                 
@@ -468,7 +468,9 @@
                 grid.appendChild(dayColumn);
             });
 
-            if (!hasScrolledToToday) {
+            // Scroll Auto
+            // MODIFICATION : On ajoute la condition !isAdmin pour ne pas scroller si on est en mode édition
+            if (!hasScrolledToToday && !isAdmin) {
                 setTimeout(() => {
                     const todayElement = document.getElementById('today-column');
                     if (todayElement) todayElement.scrollIntoView({ behavior: 'smooth' });
@@ -477,6 +479,7 @@
             }
         }
 
+        // --- AUTH ---
         window.toggleAdminPanel = () => {
             if (isAdmin) document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
             else {
