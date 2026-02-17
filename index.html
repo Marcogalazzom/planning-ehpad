@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planning des Activités - EHPAD Claudette Chesne</title>
+    <title>Planning des Activités - EHPAD & PASA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -15,34 +15,48 @@
         .activity-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         button:focus { outline: 3px solid #facc15; outline-offset: 2px; }
         
-        /* Style pour le Drag & Drop */
-        .draggable-source { opacity: 0.4; border: 2px dashed #059669; }
-        .drop-zone-active { background-color: #ecfdf5 !important; border: 2px dashed #34d399 !important; }
+        /* Drag & Drop */
+        .draggable-source { opacity: 0.4; border: 2px dashed #666; }
+        .drop-zone-active { background-color: #f0fdf4 !important; border: 2px dashed #4ade80 !important; }
         .cursor-grab { cursor: grab; }
         .cursor-grabbing { cursor: grabbing; }
     </style>
 </head>
-<body class="text-slate-800 min-h-screen flex flex-col">
+<body class="text-slate-800 min-h-screen flex flex-col transition-colors duration-500" id="mainBody">
 
     <!-- En-tête -->
-    <header class="bg-white shadow-md sticky top-0 z-50 border-b-4 border-emerald-500">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="bg-emerald-100 p-3 rounded-full text-emerald-600">
-                    <i class="fas fa-leaf text-2xl"></i>
+    <header id="mainHeader" class="bg-white shadow-md sticky top-0 z-50 border-b-4 border-emerald-500 transition-colors duration-500">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                    <div id="logoBg" class="bg-emerald-100 p-3 rounded-full text-emerald-600 transition-colors duration-500">
+                        <i class="fas fa-leaf text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl md:text-3xl font-bold text-slate-800">EHPAD Claudette Chesne</h1>
+                        <p id="subTitle" class="text-slate-500 text-sm md:text-base">Planning des activités</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-2xl md:text-3xl font-bold text-slate-800">EHPAD - Claudette Chesne</h1>
-                    <p class="text-slate-500 text-sm md:text-base">Planning des activités</p>
+                
+                <div class="flex gap-2">
+                    <button id="authBtn" onclick="toggleAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2">
+                        <i class="fas fa-lock"></i> <span class="hidden md:inline">Admin</span>
+                    </button>
+                    <button id="logoutBtn" onclick="logout()" class="hidden bg-red-100 hover:bg-red-200 text-red-600 px-3 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i> <span class="hidden md:inline">Déco</span>
+                    </button>
                 </div>
             </div>
-            
-            <button id="authBtn" onclick="toggleAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2">
-                <i class="fas fa-lock"></i> <span class="hidden md:inline">Espace Admin</span>
-            </button>
-            <button id="logoutBtn" onclick="logout()" class="hidden bg-red-100 hover:bg-red-200 text-red-600 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2">
-                <i class="fas fa-sign-out-alt"></i> <span class="hidden md:inline">Déconnexion</span>
-            </button>
+
+            <!-- ONGLETS DE NAVIGATION (TABS) -->
+            <div class="flex space-x-2 bg-slate-100 p-1 rounded-xl w-full md:w-fit mx-auto">
+                <button onclick="switchUnit('main')" id="tabMain" class="flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700">
+                    <i class="fas fa-users mr-2"></i> Animation
+                </button>
+                <button onclick="switchUnit('pasa')" id="tabPasa" class="flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300">
+                    <i class="fas fa-puzzle-piece mr-2"></i> PASA
+                </button>
+            </div>
         </div>
     </header>
 
@@ -53,15 +67,12 @@
     </div>
 
     <main class="flex-grow container mx-auto px-4 py-8">
-        <div class="text-center mb-10 max-w-2xl mx-auto">
-            <h2 class="text-3xl font-bold text-slate-700 mb-3">Activités de la Semaine</h2>
-        </div>
-
+        
         <!-- Interface Admin -->
         <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <h3 id="formTitle" class="text-xl font-bold text-emerald-700 flex items-center gap-2"><i class="fas fa-edit"></i> Ajouter une activité</h3>
-                <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded">Mode Édition</span>
+                <h3 id="formTitle" class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-edit"></i> Ajouter une activité</h3>
+                <span id="adminBadge" class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded">Mode Édition</span>
             </div>
             
             <form id="addActivityForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -120,7 +131,7 @@
         <div id="scheduleGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
             <div class="col-span-full text-center py-12">
                 <i class="fas fa-circle-notch fa-spin text-4xl text-emerald-500"></i>
-                <p class="mt-4 text-slate-500">Connexion au planning en cours...</p>
+                <p class="mt-4 text-slate-500">Chargement du planning...</p>
             </div>
         </div>
     </main>
@@ -164,10 +175,12 @@
         }
 
         const PASSWORD_HASH = "a0f6b1c5f6300240814fbcabecd15da01f7de602e4a2522cd74af5320b040161"; 
+        
         let isAdmin = false;
-        let currentActivities = [];
+        let allActivities = []; // Contient TOUTES les activités
+        let currentUnit = 'main'; // 'main' (EHPAD) ou 'pasa' (PASA)
         let editingId = null;
-        let hasScrolledToToday = false; // Variable pour gérer le scroll automatique unique
+        let hasScrolledToToday = false;
 
         const daysOrder = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
         
@@ -186,6 +199,70 @@
             cinema: { icon: 'fa-film', color: 'bg-teal-100 text-teal-700 border-teal-200' },
         };
 
+        // --- GESTION DES UNITÉS (EHPAD / PASA) ---
+        
+        window.switchUnit = (unit) => {
+            currentUnit = unit;
+            updateTheme(unit);
+            // On refiltre les activités pour n'afficher que celles de l'unité choisie
+            renderSchedule();
+            cancelEdit(); // Si on éditait quelque chose, on annule
+        };
+
+        function updateTheme(unit) {
+            const header = document.getElementById('mainHeader');
+            const logoBg = document.getElementById('logoBg');
+            const btnMain = document.getElementById('tabMain');
+            const btnPasa = document.getElementById('tabPasa');
+            const subTitle = document.getElementById('subTitle');
+            const submitBtn = document.getElementById('submitBtn');
+            const adminBadge = document.getElementById('adminBadge');
+
+            if (unit === 'main') {
+                // Thème Vert (EHPAD)
+                header.classList.remove('border-amber-500');
+                header.classList.add('border-emerald-500');
+                logoBg.classList.remove('bg-amber-100', 'text-amber-600');
+                logoBg.classList.add('bg-emerald-100', 'text-emerald-600');
+                
+                // Onglets
+                btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700";
+                btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
+                
+                subTitle.innerText = "Planning Général EHPAD";
+                
+                if(submitBtn) {
+                    submitBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                    submitBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                }
+                if(adminBadge) {
+                    adminBadge.className = "bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded";
+                }
+
+            } else {
+                // Thème Orange (PASA)
+                header.classList.remove('border-emerald-500');
+                header.classList.add('border-amber-500');
+                logoBg.classList.remove('bg-emerald-100', 'text-emerald-600');
+                logoBg.classList.add('bg-amber-100', 'text-amber-600');
+
+                // Onglets
+                btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-amber-700";
+                btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
+
+                subTitle.innerText = "Planning Unité PASA";
+
+                if(submitBtn) {
+                    submitBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                    submitBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+                }
+                if(adminBadge) {
+                    adminBadge.className = "bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-0.5 rounded";
+                }
+            }
+        }
+
+        // --- DATES ---
         function getWeekDates() {
             const dates = {};
             const curr = new Date();
@@ -201,19 +278,19 @@
             return dates;
         }
 
+        // --- FIREBASE LISTEN ---
         if(db) {
             const q = query(collection(db, "activities"));
             onSnapshot(q, (snapshot) => {
-                currentActivities = [];
+                allActivities = [];
                 snapshot.forEach((doc) => {
-                    currentActivities.push({ ...doc.data(), id: doc.id });
+                    allActivities.push({ ...doc.data(), id: doc.id });
                 });
-                renderSchedule(currentActivities);
+                renderSchedule();
             });
         }
 
-        // --- DRAG AND DROP FUNCTIONS ---
-        
+        // --- DRAG AND DROP ---
         window.drag = (ev, id) => {
             if (!isAdmin) return;
             ev.dataTransfer.setData("text", id);
@@ -235,29 +312,23 @@
         window.drop = async (ev, newDay) => {
             if (!isAdmin) return;
             ev.preventDefault();
-            const dropZone = ev.currentTarget;
-            dropZone.classList.remove("drop-zone-active");
+            ev.currentTarget.classList.remove("drop-zone-active");
             
             const activityId = ev.dataTransfer.getData("text");
-            const activity = currentActivities.find(a => a.id === activityId);
-
-            // Retirer l'effet visuel de la source
-            const sourceElement = document.querySelector('.draggable-source');
-            if(sourceElement) sourceElement.classList.remove('draggable-source');
+            const activity = allActivities.find(a => a.id === activityId);
+            document.querySelector('.draggable-source')?.classList.remove('draggable-source');
 
             if (activity && activity.day !== newDay) {
                 try {
                     await updateDoc(doc(db, "activities", activityId), { day: newDay });
                     showToast(`Déplacé vers ${newDay}`, 'success');
                 } catch (e) {
-                    console.error("Erreur déplacement:", e);
-                    showToast("Erreur lors du déplacement", "error");
+                    showToast("Erreur déplacement", "error");
                 }
             }
         }
 
-        // --- Standard Logic ---
-
+        // --- CRUD FORM ---
         document.getElementById('addActivityForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if(!db) return;
@@ -268,6 +339,7 @@
                 type: document.getElementById('inputType').value,
                 title: document.getElementById('inputTitle').value,
                 desc: document.getElementById('inputDesc').value,
+                unit: currentUnit, // IMPORTANT : On enregistre dans l'unité active
                 createdAt: Date.now()
             };
 
@@ -287,7 +359,7 @@
         });
 
         window.editActivity = (id) => {
-            const activity = currentActivities.find(a => a.id === id);
+            const activity = allActivities.find(a => a.id === id);
             if (!activity) return;
             document.getElementById('inputDay').value = activity.day;
             document.getElementById('inputTime').value = activity.time;
@@ -306,8 +378,9 @@
             editingId = null;
             document.getElementById('addActivityForm').reset();
             document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit"></i> Ajouter une activité';
+            const btnColor = currentUnit === 'main' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700';
             document.getElementById('submitBtn').innerHTML = '<i class="fas fa-plus-circle"></i> <span>Ajouter</span>';
-            document.getElementById('submitBtn').className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2";
+            document.getElementById('submitBtn').className = `${btnColor} text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2`;
             document.getElementById('cancelBtn').classList.add('hidden');
         };
 
@@ -318,41 +391,44 @@
                     await deleteDoc(doc(db, "activities", id));
                     showToast('Activité supprimée.', 'info');
                 } catch (e) {
-                    showToast("Erreur de suppression", "error");
+                    showToast("Erreur suppression", "error");
                 }
             }
         }
 
-        function renderSchedule(activities) {
+        // --- RENDER ---
+        function renderSchedule() {
             const grid = document.getElementById('scheduleGrid');
             grid.innerHTML = '';
             const weekDates = getWeekDates();
 
+            // FILTRE : On ne garde que les activités de l'unité active
+            // Si une activité n'a pas de propriété 'unit' (anciennes données), on considère qu'elle est 'main'
+            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit);
+
             daysOrder.forEach(day => {
-                const dayActivities = activities
+                const dayActivities = unitActivities
                     .filter(a => a.day === day)
                     .sort((a, b) => a.time.localeCompare(b.time));
 
-                // Ajout de la classe scroll-mt-32 pour le scroll automatique (gestion marge header)
                 const dayColumn = document.createElement('div');
                 dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-32';
                 
                 const isToday = new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
-                
-                // Si c'est aujourd'hui, on ajoute un ID pour le cibler
                 if (isToday) dayColumn.id = 'today-column';
 
-                const headerClass = isToday ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700';
+                // Couleur header selon l'unité
+                const headerClass = isToday 
+                    ? (currentUnit === 'main' ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white') 
+                    : 'bg-slate-100 text-slate-700';
                 
-                // HEADER
                 let html = `
                     <div class="${headerClass} p-4 border-b border-slate-200">
                         <h3 class="text-xl font-bold capitalize flex justify-between items-center">
                             <span>${day} <span class="font-sans text-lg font-medium opacity-90 ml-1">${weekDates[day]}</span></span>
-                            ${isToday ? '<span class="text-xs bg-white text-emerald-600 px-2 py-1 rounded-full uppercase">Aujourd\'hui</span>' : ''}
+                            ${isToday ? `<span class="text-xs bg-white ${currentUnit === 'main' ? 'text-emerald-600' : 'text-amber-600'} px-2 py-1 rounded-full uppercase">Aujourd\'hui</span>` : ''}
                         </h3>
                     </div>
-                    <!-- DROP ZONE -->
                     <div class="p-4 space-y-4 flex-grow bg-slate-50/50"
                          ondrop="drop(event, '${day}')" 
                          ondragover="allowDrop(event)"
@@ -366,10 +442,9 @@
                         const style = activityTypes[act.type] || activityTypes.social;
                         const adminActions = isAdmin ? `
                             <div class="flex gap-1">
-                                <button onclick="editActivity('${act.id}')" class="text-blue-400 hover:text-blue-600 transition p-1" title="Modifier"><i class="fas fa-pen"></i></button>
-                                <button onclick="deleteActivity('${act.id}')" class="text-red-400 hover:text-red-600 transition p-1" title="Supprimer"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                        ` : '';
+                                <button onclick="editActivity('${act.id}')" class="text-blue-400 hover:text-blue-600 transition p-1"><i class="fas fa-pen"></i></button>
+                                <button onclick="deleteActivity('${act.id}')" class="text-red-400 hover:text-red-600 transition p-1"><i class="fas fa-trash-alt"></i></button>
+                            </div>` : '';
                         
                         const draggableAttr = isAdmin ? `draggable="true" ondragstart="drag(event, '${act.id}')"` : '';
                         const cursorClass = isAdmin ? 'cursor-grab active:cursor-grabbing' : '';
@@ -395,19 +470,17 @@
                 grid.appendChild(dayColumn);
             });
 
-            // LOGIQUE DE SCROLL AUTOMATIQUE (Une seule fois au chargement)
+            // Scroll Auto
             if (!hasScrolledToToday) {
-                // Petit délai pour laisser le navigateur rendre le HTML
                 setTimeout(() => {
                     const todayElement = document.getElementById('today-column');
-                    if (todayElement) {
-                        todayElement.scrollIntoView({ behavior: 'smooth' });
-                    }
+                    if (todayElement) todayElement.scrollIntoView({ behavior: 'smooth' });
                 }, 500);
                 hasScrolledToToday = true;
             }
         }
 
+        // --- AUTH ---
         window.toggleAdminPanel = () => {
             if (isAdmin) document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
             else {
@@ -433,7 +506,7 @@
                 document.getElementById('logoutBtn').classList.remove('hidden');
                 closeLoginModal();
                 showToast('Mode Admin Connecté', 'success');
-                renderSchedule(currentActivities); 
+                renderSchedule(); 
             } else {
                 showToast('Mot de passe incorrect', 'error');
             }
@@ -446,7 +519,7 @@
             document.getElementById('authBtn').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.add('hidden');
             showToast('Déconnexion', 'info');
-            renderSchedule(currentActivities); 
+            renderSchedule(); 
         };
 
         window.showToast = (message, type = 'info') => {
@@ -459,4 +532,3 @@
     </script>
 </body>
 </html>
-
