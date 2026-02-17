@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planning des Activités - EHPAD Claudette Chesne</title>
+    <title>Planning des Activités - EHPAD & PASA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -177,8 +177,8 @@
         const PASSWORD_HASH = "a0f6b1c5f6300240814fbcabecd15da01f7de602e4a2522cd74af5320b040161"; 
         
         let isAdmin = false;
-        let allActivities = []; // Contient TOUTES les activités
-        let currentUnit = 'main'; // 'main' (EHPAD) ou 'pasa' (PASA)
+        let allActivities = []; 
+        let currentUnit = 'main'; 
         let editingId = null;
         let hasScrolledToToday = false;
 
@@ -204,11 +204,9 @@
         window.switchUnit = (unit) => {
             currentUnit = unit;
             updateTheme(unit);
-            // On réinitialise le scroll pour qu'il se déclenche à nouveau
             hasScrolledToToday = false; 
-            // On refiltre les activités pour n'afficher que celles de l'unité choisie
             renderSchedule();
-            cancelEdit(); // Si on éditait quelque chose, on annule
+            cancelEdit(); 
         };
 
         function updateTheme(unit) {
@@ -341,7 +339,7 @@
                 type: document.getElementById('inputType').value,
                 title: document.getElementById('inputTitle').value,
                 desc: document.getElementById('inputDesc').value,
-                unit: currentUnit, // IMPORTANT : On enregistre dans l'unité active
+                unit: currentUnit, 
                 createdAt: Date.now()
             };
 
@@ -404,8 +402,6 @@
             grid.innerHTML = '';
             const weekDates = getWeekDates();
 
-            // FILTRE : On ne garde que les activités de l'unité active
-            // Si une activité n'a pas de propriété 'unit' (anciennes données), on considère qu'elle est 'main'
             const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit);
 
             daysOrder.forEach(day => {
@@ -413,13 +409,13 @@
                     .filter(a => a.day === day)
                     .sort((a, b) => a.time.localeCompare(b.time));
 
+                // Ajout de la classe scroll-mt-48 (12rem) pour le scroll automatique ajusté
                 const dayColumn = document.createElement('div');
-                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-32';
+                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-48';
                 
                 const isToday = new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
                 if (isToday) dayColumn.id = 'today-column';
 
-                // Couleur header selon l'unité
                 const headerClass = isToday 
                     ? (currentUnit === 'main' ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white') 
                     : 'bg-slate-100 text-slate-700';
@@ -472,7 +468,6 @@
                 grid.appendChild(dayColumn);
             });
 
-            // Scroll Auto
             if (!hasScrolledToToday) {
                 setTimeout(() => {
                     const todayElement = document.getElementById('today-column');
@@ -482,7 +477,6 @@
             }
         }
 
-        // --- AUTH ---
         window.toggleAdminPanel = () => {
             if (isAdmin) document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
             else {
