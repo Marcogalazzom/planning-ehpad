@@ -204,6 +204,8 @@
         window.switchUnit = (unit) => {
             currentUnit = unit;
             updateTheme(unit);
+            // On réinitialise le scroll pour qu'il se déclenche à nouveau
+            hasScrolledToToday = false; 
             // On refiltre les activités pour n'afficher que celles de l'unité choisie
             renderSchedule();
             cancelEdit(); // Si on éditait quelque chose, on annule
@@ -532,4 +534,3 @@
     </script>
 </body>
 </html>
-
