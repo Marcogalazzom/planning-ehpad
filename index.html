@@ -8,8 +8,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     
-    <!-- Librairie jsPDF pour l'export PDF -->
+    <!-- Librairies Export PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         body { font-family: 'Lato', sans-serif; background-color: #f8fafc; }
@@ -24,12 +25,37 @@
         .cursor-grab { cursor: grab; }
         .cursor-grabbing { cursor: grabbing; }
 
-        /* Styles d'impression */
+        /* Styles d'impression Directe (Navigateur) */
         @media print {
-            header, #adminPanel, button, .no-print { display: none !important; }
-            body { background: white; }
-            .activity-card { page-break-inside: avoid; }
-            #scheduleGrid { gap: 1rem !important; }
+            @page { size: landscape; margin: 1cm; }
+            body { background: white; -webkit-print-color-adjust: exact; }
+            header, #adminPanel, #authBtn, #logoutBtn, #toast, #exportPdfBtn, #adminBadge, .no-print { display: none !important; }
+            #scheduleGrid { 
+                display: grid !important; 
+                grid-template-columns: repeat(7, 1fr) !important; /* Force 7 colonnes */
+                gap: 0.5rem !important;
+            }
+            .activity-card { 
+                break-inside: avoid; 
+                border: 1px solid #ccc;
+                box-shadow: none !important;
+            }
+            /* Masquer les boutons d'admin sur l'impression */
+            button { display: none !important; }
+        }
+
+        /* Gabarit Poster Caché (utilisé pour l'export PDF) */
+        #poster-container {
+            position: fixed;
+            top: -10000px;
+            left: -10000px;
+            width: 1600px; /* Largeur haute résolution pour A4 paysage */
+            height: 1131px; /* Ratio A4 */
+            background: white;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            z-index: -10;
         }
     </style>
 </head>
@@ -50,9 +76,9 @@
                 </div>
                 
                 <div class="flex gap-2">
-                    <!-- NOUVEAU : Bouton Export PDF -->
-                    <button id="exportPdfBtn" onclick="showExportModal()" class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-3 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2">
-                        <i class="fas fa-file-pdf"></i> <span class="hidden md:inline">Export PDF</span>
+                    <!-- Bouton Export PDF -->
+                    <button id="exportPdfBtn" onclick="generateBeautifulPDF()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition text-sm font-bold flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-file-pdf"></i> <span class="hidden md:inline">Télécharger l'Affiche</span>
                     </button>
                     
                     <button id="authBtn" onclick="toggleAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2">
@@ -65,7 +91,7 @@
             </div>
 
             <!-- ONGLETS DE NAVIGATION (TABS) -->
-            <div class="flex space-x-2 bg-slate-100 p-1 rounded-xl w-full md:w-fit mx-auto">
+            <div class="flex space-x-2 bg-slate-100 p-1 rounded-xl w-full md:w-fit mx-auto no-print">
                 <button onclick="switchUnit('main')" id="tabMain" class="flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700">
                     <i class="fas fa-users mr-2"></i> Animation
                 </button>
@@ -152,54 +178,37 @@
         </div>
     </main>
 
-    <!-- NOUVEAU : Modal Export PDF -->
-    <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-slate-800">Exporter en PDF</h3>
-                <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-600">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+    <!-- HIDDEN POSTER CONTAINER FOR EXPORT -->
+    <div id="poster-container">
+        <!-- Header Poster -->
+        <div class="flex justify-between items-center mb-8 border-b-4 border-slate-800 pb-4" id="posterHeader">
+            <div class="flex items-center gap-6">
+                <div id="posterLogo" class="bg-emerald-100 text-emerald-700 p-6 rounded-full text-5xl">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <div>
+                    <h1 class="text-5xl font-serif text-slate-800 font-bold mb-2">EHPAD Claudette Chesne</h1>
+                    <h2 id="posterSubTitle" class="text-3xl text-slate-600 font-sans">Planning des Activités</h2>
+                </div>
             </div>
-            
-            <div class="space-y-3 mb-6">
-                <button onclick="exportPDF('complete')" class="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition">
-                    <div class="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-file-pdf text-xl"></i>
-                    </div>
-                    <div class="text-left flex-grow">
-                        <h4 class="font-bold text-slate-800">Planning Complet</h4>
-                        <p class="text-sm text-slate-500">Semaine entière avec détails</p>
-                    </div>
-                </button>
-
-                <button onclick="exportPDF('compact')" class="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition">
-                    <div class="bg-emerald-100 text-emerald-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-list text-xl"></i>
-                    </div>
-                    <div class="text-left flex-grow">
-                        <h4 class="font-bold text-slate-800">Version Compacte</h4>
-                        <p class="text-sm text-slate-500">Format liste (1 page)</p>
-                    </div>
-                </button>
-
-                <button onclick="window.print()" class="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition">
-                    <div class="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-print text-xl"></i>
-                    </div>
-                    <div class="text-left flex-grow">
-                        <h4 class="font-bold text-slate-800">Impression Directe</h4>
-                        <p class="text-sm text-slate-500">Imprimer sans télécharger</p>
-                    </div>
-                </button>
+            <div class="text-right">
+                <p class="text-xl text-slate-500 uppercase tracking-widest font-bold mb-1">Semaine du</p>
+                <p id="posterDateRange" class="text-4xl font-bold text-slate-800">Lundi au Dimanche</p>
             </div>
+        </div>
 
-            <button onclick="closeExportModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700 transition">
-                Annuler
-            </button>
+        <!-- Grid Poster -->
+        <div class="grid grid-cols-7 gap-4 flex-grow items-stretch" id="posterGrid">
+            <!-- Will be populated by JS -->
+        </div>
+
+        <!-- Footer Poster -->
+        <div class="mt-8 text-center text-slate-400 text-lg border-t pt-4">
+            <p>EHPAD Claudette Chesne</p>
         </div>
     </div>
 
+    <!-- Login Modal -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4">
             <h3 class="text-2xl font-bold text-center mb-4">Admin</h3>
@@ -249,163 +258,19 @@
         const daysOrder = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
         
         const activityTypes = {
-            sport: { icon: 'fa-dumbbell', color: 'bg-blue-100 text-blue-700 border-blue-200', label: '💪 Sport' },
-            cognitive: { icon: 'fa-brain', color: 'bg-purple-100 text-purple-700 border-purple-200', label: '🧠 Mémoire' },
-            creative: { icon: 'fa-palette', color: 'bg-pink-100 text-pink-700 border-pink-200', label: '🎨 Créatif' },
-            music: { icon: 'fa-music', color: 'bg-yellow-100 text-yellow-700 border-yellow-200', label: '🎵 Musique' },
-            food: { icon: 'fa-coffee', color: 'bg-orange-100 text-orange-700 border-orange-200', label: '☕ Goûter' },
-            social: { icon: 'fa-comments', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', label: '💬 Social' },
-            outing: { icon: 'fa-bus', color: 'bg-cyan-100 text-cyan-700 border-cyan-200', label: '🚌 Sortie' },
-            festive: { icon: 'fa-glass-cheers', color: 'bg-red-100 text-red-700 border-red-200', label: '🎉 Fête' },
-            sensory: { icon: 'fa-hand-sparkles', color: 'bg-indigo-100 text-indigo-700 border-indigo-200', label: '✨ Sensoriel' },
-            animal: { icon: 'fa-paw', color: 'bg-amber-100 text-amber-700 border-amber-200', label: '🐾 Animaux' },
-            religious: { icon: 'fa-church', color: 'bg-violet-100 text-violet-700 border-violet-200', label: '⛪ Culte' },
-            cinema: { icon: 'fa-film', color: 'bg-teal-100 text-teal-700 border-teal-200', label: '🎬 Cinéma' },
+            sport: { icon: 'fa-dumbbell', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+            cognitive: { icon: 'fa-brain', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+            creative: { icon: 'fa-palette', color: 'bg-pink-100 text-pink-700 border-pink-200' },
+            music: { icon: 'fa-music', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+            food: { icon: 'fa-coffee', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+            social: { icon: 'fa-comments', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+            outing: { icon: 'fa-bus', color: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
+            festive: { icon: 'fa-glass-cheers', color: 'bg-red-100 text-red-700 border-red-200' },
+            sensory: { icon: 'fa-hand-sparkles', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+            animal: { icon: 'fa-paw', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+            religious: { icon: 'fa-church', color: 'bg-violet-100 text-violet-700 border-violet-200' },
+            cinema: { icon: 'fa-film', color: 'bg-teal-100 text-teal-700 border-teal-200' },
         };
-
-        // === NOUVELLE SECTION : EXPORT PDF ===
-        
-        window.showExportModal = () => {
-            document.getElementById('exportModal').classList.remove('hidden');
-        };
-
-        window.closeExportModal = () => {
-            document.getElementById('exportModal').classList.add('hidden');
-        };
-
-        window.exportPDF = async (type) => {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            
-            const weekDates = getWeekDates();
-            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit);
-            const unitName = currentUnit === 'main' ? 'Animation' : 'PASA';
-            
-            // En-tête
-            pdf.setFontSize(20);
-            pdf.setFont(undefined, 'bold');
-            pdf.text('EHPAD Claudette Chesne', 105, 20, { align: 'center' });
-            
-            pdf.setFontSize(14);
-            pdf.setFont(undefined, 'normal');
-            pdf.text(`Planning ${unitName} - Semaine du ${getWeekRange()}`, 105, 30, { align: 'center' });
-            
-            let yPos = 45;
-
-            if (type === 'complete') {
-                // VERSION COMPLÈTE
-                daysOrder.forEach((day, dayIndex) => {
-                    const dayActivities = unitActivities
-                        .filter(a => a.day === day)
-                        .sort((a, b) => a.time.localeCompare(b.time));
-
-                    // Nouvelle page si nécessaire
-                    if (yPos > 250) {
-                        pdf.addPage();
-                        yPos = 20;
-                    }
-
-                    // En-tête du jour
-                    pdf.setFillColor(16, 185, 129); // Emerald
-                    if (currentUnit === 'pasa') pdf.setFillColor(245, 158, 11); // Amber
-                    pdf.rect(15, yPos - 5, 180, 10, 'F');
-                    
-                    pdf.setTextColor(255, 255, 255);
-                    pdf.setFontSize(12);
-                    pdf.setFont(undefined, 'bold');
-                    pdf.text(`${day} ${weekDates[day]}`, 20, yPos + 2);
-                    
-                    yPos += 12;
-                    pdf.setTextColor(0, 0, 0);
-
-                    if (dayActivities.length === 0) {
-                        pdf.setFontSize(10);
-                        pdf.setFont(undefined, 'italic');
-                        pdf.text('Aucune activité prévue', 20, yPos);
-                        yPos += 8;
-                    } else {
-                        dayActivities.forEach(act => {
-                            const typeInfo = activityTypes[act.type] || activityTypes.social;
-                            
-                            pdf.setFont(undefined, 'bold');
-                            pdf.setFontSize(11);
-                            pdf.text(`${act.time} - ${act.title}`, 20, yPos);
-                            
-                            if (act.desc) {
-                                pdf.setFont(undefined, 'normal');
-                                pdf.setFontSize(9);
-                                pdf.setTextColor(100, 100, 100);
-                                pdf.text(act.desc, 20, yPos + 4);
-                                pdf.setTextColor(0, 0, 0);
-                                yPos += 4;
-                            }
-                            
-                            yPos += 8;
-                        });
-                    }
-                    
-                    yPos += 5;
-                });
-
-            } else if (type === 'compact') {
-                // VERSION COMPACTE
-                pdf.setFontSize(10);
-                
-                daysOrder.forEach(day => {
-                    const dayActivities = unitActivities
-                        .filter(a => a.day === day)
-                        .sort((a, b) => a.time.localeCompare(b.time));
-
-                    if (yPos > 270) {
-                        pdf.addPage();
-                        yPos = 20;
-                    }
-
-                    pdf.setFont(undefined, 'bold');
-                    pdf.text(`${day} ${weekDates[day]}`, 15, yPos);
-                    yPos += 5;
-
-                    if (dayActivities.length === 0) {
-                        pdf.setFont(undefined, 'italic');
-                        pdf.text('- Aucune activité', 20, yPos);
-                        yPos += 5;
-                    } else {
-                        dayActivities.forEach(act => {
-                            pdf.setFont(undefined, 'normal');
-                            const line = `• ${act.time} : ${act.title}${act.desc ? ' (' + act.desc + ')' : ''}`;
-                            pdf.text(line, 20, yPos);
-                            yPos += 5;
-                        });
-                    }
-                    yPos += 3;
-                });
-            }
-
-            // Pied de page
-            const totalPages = pdf.internal.pages.length - 1;
-            for (let i = 1; i <= totalPages; i++) {
-                pdf.setPage(i);
-                pdf.setFontSize(8);
-                pdf.setTextColor(150, 150, 150);
-                pdf.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} - Page ${i}/${totalPages}`, 105, 290, { align: 'center' });
-            }
-
-            // Téléchargement
-            const fileName = `Planning_${unitName}_${new Date().toISOString().split('T')[0]}.pdf`;
-            pdf.save(fileName);
-            
-            closeExportModal();
-            showToast('PDF généré avec succès !', 'success');
-        };
-
-        function getWeekRange() {
-            const dates = getWeekDates();
-            const monday = dates['Lundi'];
-            const sunday = dates['Dimanche'];
-            return `${monday} au ${sunday}`;
-        }
-
-        // === FIN EXPORT PDF ===
 
         // --- GESTION DES UNITÉS (EHPAD / PASA) ---
         
@@ -438,12 +303,9 @@
                 header.classList.add('border-emerald-500');
                 logoBg.classList.remove('bg-amber-100', 'text-amber-600');
                 logoBg.classList.add('bg-emerald-100', 'text-emerald-600');
-                
                 btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700";
                 btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
-                
-                subTitle.innerText = "Planning des activités";
-                
+                subTitle.innerText = "Planning Animation";
                 if(submitBtn) {
                     submitBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
                     submitBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
@@ -451,18 +313,14 @@
                 if(adminBadge) {
                     adminBadge.className = "bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded";
                 }
-
             } else {
                 header.classList.remove('border-emerald-500');
                 header.classList.add('border-amber-500');
                 logoBg.classList.remove('bg-emerald-100', 'text-emerald-600');
                 logoBg.classList.add('bg-amber-100', 'text-amber-600');
-
                 btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-amber-700";
                 btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
-
                 subTitle.innerText = "Planning PASA";
-
                 if(submitBtn) {
                     submitBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
                     submitBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
@@ -473,7 +331,6 @@
             }
         }
 
-        // --- DATES ---
         function getWeekDates() {
             const dates = {};
             const curr = new Date();
@@ -488,6 +345,105 @@
             });
             return dates;
         }
+
+        // --- NEW : GENERATE BEAUTIFUL PDF POSTER ---
+        window.generateBeautifulPDF = async () => {
+            showToast("Génération de l'affiche en cours...", "info");
+            
+            const poster = document.getElementById('poster-container');
+            const posterGrid = document.getElementById('posterGrid');
+            const weekDates = getWeekDates();
+            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit);
+            
+            // 1. Populate Poster Header
+            const subTitleText = currentUnit === 'main' ? "Planning Général EHPAD" : "Planning Unité PASA";
+            const mainColor = currentUnit === 'main' ? 'text-emerald-700' : 'text-amber-700';
+            const logoColor = currentUnit === 'main' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
+            const borderColor = currentUnit === 'main' ? 'border-emerald-600' : 'border-amber-600';
+            
+            document.getElementById('posterSubTitle').innerText = subTitleText;
+            document.getElementById('posterSubTitle').className = `text-3xl font-sans font-bold ${mainColor}`;
+            document.getElementById('posterLogo').className = `${logoColor} p-6 rounded-full text-5xl`;
+            document.getElementById('posterHeader').className = `flex justify-between items-center mb-8 border-b-4 ${borderColor} pb-4`;
+            document.getElementById('posterDateRange').innerText = `${weekDates['Lundi']} au ${weekDates['Dimanche']}`;
+
+            // 2. Populate Grid
+            posterGrid.innerHTML = '';
+            
+            daysOrder.forEach(day => {
+                const dayActivities = unitActivities
+                    .filter(a => a.day === day)
+                    .sort((a, b) => a.time.localeCompare(b.time));
+                
+                const headerBg = currentUnit === 'main' ? 'bg-emerald-600' : 'bg-amber-600';
+                
+                let colHtml = `
+                    <div class="flex flex-col h-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+                        <div class="${headerBg} text-white p-3 text-center">
+                            <h3 class="text-2xl font-bold font-serif">${day}</h3>
+                            <p class="text-lg opacity-90">${weekDates[day]}</p>
+                        </div>
+                        <div class="p-3 flex-grow space-y-3">
+                `;
+                
+                if (dayActivities.length === 0) {
+                    colHtml += `<div class="text-center py-10 opacity-40"><i class="fas fa-bed text-4xl mb-2"></i><p>Repos</p></div>`;
+                } else {
+                    dayActivities.forEach(act => {
+                        const style = activityTypes[act.type] || activityTypes.social;
+                        // On force l'affichage complet des couleurs pour le PDF
+                        const cardBorder = style.color.split(' ')[2].replace('border-', 'border-color: #'); // Hack simple ou utiliser classes
+                        
+                        colHtml += `
+                            <div class="bg-white border-l-8 rounded-r-lg shadow-sm p-3 relative" style="border-left-color: currentColor;">
+                                <div class="flex items-start gap-2">
+                                    <div class="${style.color.split(' ')[1]} text-xl w-8 text-center pt-1">
+                                        <i class="fas ${style.icon}"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-xl text-slate-800">${act.time}</p>
+                                        <p class="font-bold text-lg text-slate-700 leading-tight">${act.title}</p>
+                                        ${act.desc ? `<p class="text-sm text-slate-500 mt-1">${act.desc}</p>` : ''}
+                                    </div>
+                                </div>
+                                <div class="${style.color.split(' ')[1]} absolute left-0 top-0 bottom-0 w-2 rounded-l-lg bg-current opacity-20"></div>
+                            </div>
+                        `;
+                        // Note: Le style inline border-left color est géré par la classe Tailwind usually, 
+                        // mais pour html2canvas il vaut mieux être explicite. 
+                        // Ici on laisse Tailwind faire le travail car html2canvas le gère bien.
+                    });
+                }
+                
+                colHtml += `</div></div>`;
+                posterGrid.innerHTML += colHtml;
+            });
+
+            // 3. Capture & Save
+            // On attend un peu que le DOM caché soit bien rendu
+            setTimeout(async () => {
+                try {
+                    const canvas = await html2canvas(poster, {
+                        scale: 2, // Meilleure qualité
+                        useCORS: true // Pour charger les webfonts
+                    });
+                    
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save(`Planning_${currentUnit}_${new Date().toISOString().split('T')[0]}.pdf`);
+                    
+                    showToast("Affiche téléchargée !", "success");
+                } catch (err) {
+                    console.error(err);
+                    showToast("Erreur lors de la création du PDF", "error");
+                }
+            }, 500);
+        };
 
         // --- FIREBASE LISTEN ---
         if(db) {
@@ -550,7 +506,7 @@
                 type: document.getElementById('inputType').value,
                 title: document.getElementById('inputTitle').value,
                 desc: document.getElementById('inputDesc').value,
-                unit: currentUnit,
+                unit: currentUnit, 
                 createdAt: Date.now()
             };
 
@@ -714,7 +670,6 @@
                 closeLoginModal();
                 showToast('Mode Admin Connecté', 'success');
                 renderSchedule(); 
-                
                 setTimeout(() => {
                     document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
                 }, 300);
