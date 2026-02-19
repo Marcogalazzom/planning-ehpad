@@ -6,7 +6,7 @@
     <title>Planning des Activités - EHPAD Claudette Chesne</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
     
     <!-- Librairies Export PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -32,7 +32,7 @@
             header, #adminPanel, #authBtn, #logoutBtn, #toast, #exportPdfBtn, #adminBadge, .no-print, #exportModal, #poster-container { display: none !important; }
             #scheduleGrid { 
                 display: grid !important; 
-                grid-template-columns: repeat(7, 1fr) !important; /* Force 7 colonnes */
+                grid-template-columns: repeat(7, 1fr) !important; 
                 gap: 0.5rem !important;
                 width: 100% !important;
             }
@@ -42,22 +42,32 @@
                 box-shadow: none !important;
                 page-break-inside: avoid;
             }
-            /* Masquer les boutons d'admin sur l'impression */
             button { display: none !important; }
         }
 
-        /* Gabarit Poster Caché (utilisé pour l'export "Affiche") */
+        /* Gabarit Poster Caché */
         #poster-container {
             position: fixed;
             left: -9999px;
             top: 0;
-            width: 1600px; /* Haute résolution pour A4 paysage */
-            height: 1131px; /* Ratio A4 */
-            background: white;
-            padding: 40px;
+            width: 2000px; /* Très haute résolution */
+            height: 1414px; /* Ratio A4 Paysage */
+            background: #ffffff;
+            padding: 50px 60px;
             display: flex;
             flex-direction: column;
             z-index: -100;
+        }
+        
+        .watermark {
+            position: absolute;
+            bottom: -80px;
+            right: -80px;
+            font-size: 700px;
+            color: #f0fdf4;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.6;
         }
     </style>
 </head>
@@ -78,7 +88,6 @@
                 </div>
                 
                 <div class="flex gap-2">
-                    <!-- Bouton Menu Export -->
                     <button id="exportPdfBtn" onclick="showExportModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition text-sm font-bold flex items-center gap-2 shadow-sm">
                         <i class="fas fa-print"></i> <span class="hidden md:inline">Imprimer / PDF</span>
                     </button>
@@ -92,7 +101,7 @@
                 </div>
             </div>
 
-            <!-- ONGLETS DE NAVIGATION (TABS) -->
+            <!-- ONGLETS DE NAVIGATION -->
             <div class="flex space-x-2 bg-slate-100 p-1 rounded-xl w-full md:w-fit mx-auto no-print">
                 <button onclick="switchUnit('main')" id="tabMain" class="flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700">
                     <i class="fas fa-users mr-2"></i> Animation
@@ -113,7 +122,7 @@
     <main class="flex-grow container mx-auto px-4 py-8">
         
         <!-- Interface Admin -->
-        <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10 scroll-mt-48">
+        <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10 scroll-mt-64">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
                 <h3 id="formTitle" class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-edit"></i> Ajouter une activité</h3>
                 <span id="adminBadge" class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded">Mode Édition</span>
@@ -182,35 +191,43 @@
 
     <!-- GABARIT POSTER (Invisible) -->
     <div id="poster-container">
+        <!-- Filigrane -->
+        <i class="fas fa-leaf watermark"></i>
+
         <!-- Header Poster -->
-        <div class="flex justify-between items-center mb-8 border-b-4 border-slate-800 pb-4" id="posterHeader">
-            <div class="flex items-center gap-6">
-                <div id="posterLogo" class="bg-emerald-100 text-emerald-700 w-20 h-20 rounded-full flex items-center justify-center text-4xl">
+        <div class="flex items-center justify-between mb-10 relative z-10 w-full" id="posterHeader">
+            <div class="flex items-center gap-8">
+                <!-- Logo -->
+                <div id="posterLogo" class="bg-emerald-600 text-white w-32 h-32 flex items-center justify-center rounded-3xl text-6xl shadow-lg border-4 border-white">
                     <i class="fas fa-leaf"></i>
                 </div>
-                <div>
-                    <h1 class="text-5xl font-serif text-slate-800 font-bold mb-1">EHPAD Claudette Chesne</h1>
-                    <div class="flex items-center gap-3">
-                        <span id="posterBadge" class="bg-emerald-600 text-white text-sm font-bold px-3 py-1 rounded-md uppercase tracking-wider mb-2">Planning</span>
-                        <h2 id="posterSubTitle" class="text-3xl font-sans font-bold text-emerald-700">Animation & Vie Sociale</h2>
+                
+                <div class="flex flex-col">
+                    <h1 class="text-6xl font-serif text-slate-800 font-black tracking-tight leading-tight">EHPAD Claudette Chesne</h1>
+                    <!-- A ne surtout pas SUPPRIMER -->
+                    <div class="flex items-center gap-4 mt-2">
+                        <h2 class="text-3xl text-emerald-700 font-sans font-semibold"></h2>
+                        <h2 id="posterSubTitle" class="text-3xl text-emerald-700 font-sans font-semibold"></h2>
                     </div>
                 </div>
             </div>
-            <div class="text-right border-2 border-slate-300 rounded-xl px-6 py-3">
-                <p class="text-sm text-slate-500 uppercase tracking-widest font-bold mb-1">Semaine du</p>
-                <p id="posterDateRange" class="text-3xl font-bold text-slate-800">16/02 au 22/02</p>
+            
+            <!-- Date Box -->
+            <div class="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-lg text-right min-w-[350px]">
+                <p class="text-xl text-slate-400 font-bold uppercase tracking-widest mb-1">Semaine du</p>
+                <p id="posterDateRange" class="text-4xl font-bold text-slate-800 font-sans">Lundi au Dimanche</p>
             </div>
         </div>
 
         <!-- Grid Poster -->
-        <div class="grid grid-cols-7 gap-4 flex-grow items-stretch" id="posterGrid">
+        <div class="grid grid-cols-7 gap-5 flex-grow items-stretch relative z-10 w-full" id="posterGrid">
             <!-- Rempli par JS -->
         </div>
 
         <!-- Footer Poster -->
-        <div class="mt-auto flex justify-between items-center text-slate-400 text-sm border-t pt-3 px-2">
-            <p><i class="fas fa-info-circle text-blue-400 mr-1"></i> Les activités sont susceptibles d'être modifiées.</p>
-            <p id="posterFooterDate">EHPAD Claudette Chesne - Document affiché le 19/02/2026</p>
+        <div class="mt-8 flex justify-between items-center text-slate-500 text-xl border-t border-slate-200 pt-6 relative z-10 font-medium w-full">
+            <p><i class="fas fa-info-circle mr-2 text-emerald-500"></i> Les activités sont susceptibles d'être modifiées.</p>
+            <p>Document mis à jour le <span id="printDate"></span></p>
         </div>
     </div>
 
@@ -231,8 +248,8 @@
                         <i class="fas fa-image text-2xl"></i>
                     </div>
                     <div class="text-left flex-grow">
-                        <h4 class="font-bold text-slate-800 text-lg">Affiche Murale</h4>
-                        <p class="text-sm text-slate-600">Rendu "Design" avec couleurs et icônes</p>
+                        <h4 class="font-bold text-slate-800 text-lg">Affiche Murale <span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-2">Recommandé</span></h4>
+                        <p class="text-sm text-slate-600">Mise en page "Canva" A4 Paysage</p>
                     </div>
                 </button>
 
@@ -254,7 +271,7 @@
                     </div>
                     <div class="text-left flex-grow">
                         <h4 class="font-bold text-slate-800">Liste Compacte</h4>
-                        <p class="text-sm text-slate-600">Économique en encre (Noir & Blanc)</p>
+                        <p class="text-sm text-slate-600">Économique en encre (N&B)</p>
                     </div>
                 </button>
             </div>
@@ -326,12 +343,14 @@
         };
 
         // --- GESTION DES UNITÉS ---
+        
         window.switchUnit = (unit) => {
             currentUnit = unit;
             updateTheme(unit);
             hasScrolledToToday = false; 
             renderSchedule();
             cancelEdit(); 
+            
             if (isAdmin) {
                 setTimeout(() => {
                     const adminPanel = document.getElementById('adminPanel');
@@ -368,7 +387,6 @@
             }
         }
 
-        // --- DATES ---
         function getWeekDates() {
             const dates = {};
             const curr = new Date();
@@ -397,70 +415,83 @@
             document.getElementById('exportModal').classList.add('hidden');
         };
 
-        // Fonction 1 : Affiche "Poster" (html2canvas)
+        // Fonction 1 : Affiche "Poster" (html2canvas) - VERSION DESIGN ++
         window.generateBeautifulPDF = async () => {
             showToast("Génération de l'affiche en cours...", "info");
+            document.getElementById('printDate').innerText = new Date().toLocaleDateString('fr-FR');
+            
             const poster = document.getElementById('poster-container');
             const posterGrid = document.getElementById('posterGrid');
             const weekDates = getWeekDates();
             const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit);
             
-            // Header Poster
-            const subTitleText = currentUnit === 'main' ? "Animation & Vie Sociale" : "Planning PASA";
-            const mainColor = currentUnit === 'main' ? 'text-emerald-700' : 'text-amber-700';
-            const logoColor = currentUnit === 'main' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
-            const borderColor = currentUnit === 'main' ? 'border-emerald-600' : 'border-amber-600';
-            const badgeColor = currentUnit === 'main' ? 'bg-emerald-600' : 'bg-amber-600';
+            // Configuration des couleurs selon l'unité
+            const isMain = currentUnit === 'main';
+            const mainColorClass = isMain ? 'bg-emerald-600' : 'bg-amber-600';
+            const logoColorClass = isMain ? 'bg-emerald-600' : 'bg-amber-600';
+            const borderColor = isMain ? 'border-emerald-600' : 'border-amber-600';
+            const subTitleColor = isMain ? 'text-emerald-700' : 'text-amber-700';
             
-            document.getElementById('posterSubTitle').innerText = subTitleText;
-            document.getElementById('posterSubTitle').className = `text-3xl font-sans font-bold ${mainColor}`;
-            document.getElementById('posterBadge').className = `${badgeColor} text-white text-sm font-bold px-3 py-1 rounded-md uppercase tracking-wider`;
-            document.getElementById('posterLogo').className = `${logoColor} w-20 h-20 rounded-full flex items-center justify-center text-4xl`;
-            document.getElementById('posterHeader').className = `flex justify-between items-center mb-8 border-b-4 ${borderColor} pb-4`;
+            // Mise à jour du Header Poster
+            document.getElementById('posterLogo').className = `${logoColorClass} text-white w-32 h-32 flex items-center justify-center rounded-3xl text-6xl shadow-lg border-4 border-white`;
+            document.getElementById('posterHeader').className = `flex items-center justify-between mb-8 pb-6 border-b-4 ${borderColor} relative z-10`;
+            document.getElementById('posterSubTitle').innerText = isMain ? "Planning Animation" : "Planning PASA";
+            document.getElementById('posterSubTitle').className = `text-3xl ${subTitleColor} font-sans font-semibold`;
             document.getElementById('posterDateRange').innerText = `${weekDates['Lundi']} au ${weekDates['Dimanche']}`;
-            
-            // Footer with current date
-            const today = new Date();
-            const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-            document.getElementById('posterFooterDate').innerText = `EHPAD Claudette Chesne - Document affiché le ${formattedDate}`;
 
-            // Grid Poster
             posterGrid.innerHTML = '';
+            
             daysOrder.forEach(day => {
                 const dayActivities = unitActivities
                     .filter(a => a.day === day)
                     .sort((a, b) => a.time.localeCompare(b.time));
                 
-                const headerBg = currentUnit === 'main' ? 'bg-emerald-600' : 'bg-amber-600';
-                
                 let colHtml = `
-                    <div class="flex flex-col h-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
-                        <div class="${headerBg} text-white p-3 text-center">
-                            <h3 class="text-2xl font-bold font-serif">${day}</h3>
-                            <p class="text-lg opacity-90">${weekDates[day]}</p>
+                    <div class="flex flex-col h-full bg-white rounded-2xl shadow-sm overflow-hidden border-2 border-slate-100">
+                        <!-- En-tête du jour -->
+                        <div class="${mainColorClass} text-white p-4 text-center relative overflow-hidden">
+                            <h3 class="text-3xl font-bold font-serif relative z-10 capitalize">${day}</h3>
+                            <p class="text-xl font-medium opacity-90 relative z-10">${weekDates[day]}</p>
+                            <div class="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white opacity-10 rounded-full"></div>
                         </div>
-                        <div class="p-3 flex-grow space-y-3">
+                        
+                        <!-- Corps du jour -->
+                        <div class="p-4 flex-grow space-y-4 bg-slate-50/50">
                 `;
                 
                 if (dayActivities.length === 0) {
-                    colHtml += `<div class="text-center py-10 opacity-40"><i class="fas fa-bed text-4xl mb-2"></i><p>Repos</p></div>`;
+                    colHtml += `
+                        <div class="flex flex-col items-center justify-center h-40 opacity-30 text-slate-400">
+                            <i class="fas fa-bed text-5xl mb-3"></i>
+                            <p class="text-xl font-medium">Repos</p>
+                        </div>`;
                 } else {
                     dayActivities.forEach(act => {
                         const style = activityTypes[act.type] || activityTypes.social;
-                        const bgColor = style.color.split(' ')[0];
-                        const textColor = style.color.split(' ')[1];
+                        // Extraction couleur
+                        const bgClass = style.color.split(' ')[0]; // ex: bg-blue-100
+                        const textClass = style.color.split(' ')[1]; // ex: text-blue-700
+                        // Convertir text-color en border-color (ex: text-blue-700 -> border-blue-700)
+                        const borderColorClass = textClass.replace('text-', 'border-');
+
                         colHtml += `
-                            <div class="bg-white rounded-lg shadow-sm p-3 relative border border-slate-100">
-                                <div class="absolute top-2 right-2 ${bgColor} ${textColor} w-8 h-8 rounded-full flex items-center justify-center text-sm">
-                                    <i class="fas ${style.icon}"></i>
+                            <div class="relative bg-white rounded-xl p-3 shadow-sm border border-slate-200 border-l-[8px] ${borderColorClass} flex flex-col gap-1 overflow-hidden group">
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="font-bold text-2xl text-slate-800 font-sans tracking-tight">${act.time}</span>
+                                    <!-- Icône seule -->
+                                    <div class="${textClass} text-2xl">
+                                        <i class="fas ${style.icon}"></i>
+                                    </div>
                                 </div>
-                                <p class="font-bold text-lg text-slate-800">${act.time}</p>
-                                <p class="font-bold text-base text-slate-700 leading-tight pr-10">${act.title}</p>
-                                ${act.desc ? `<p class="text-xs text-slate-400 mt-1 italic">${act.desc}</p>` : ''}
+                                <div>
+                                    <p class="font-bold text-xl text-slate-800 leading-tight mb-1">${act.title}</p>
+                                    ${act.desc ? `<p class="text-lg text-slate-500 font-medium leading-snug">${act.desc}</p>` : ''}
+                                </div>
                             </div>
                         `;
                     });
                 }
+                
                 colHtml += `</div></div>`;
                 posterGrid.innerHTML += colHtml;
             });
@@ -468,23 +499,21 @@
             // Capture
             setTimeout(async () => {
                 try {
-                    const canvas = await html2canvas(poster, { scale: 2, useCORS: true });
-                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const canvas = await html2canvas(poster, { scale: 1.5, useCORS: true, logging: false });
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF('l', 'mm', 'a4');
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = pdf.internal.pageSize.getHeight();
-                    
                     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
                     pdf.save(`Affiche_${currentUnit}_${new Date().toISOString().split('T')[0]}.pdf`);
-                    
                     showToast("Affiche téléchargée !", "success");
                     closeExportModal();
                 } catch (err) {
                     console.error(err);
                     showToast("Erreur lors de la création", "error");
                 }
-            }, 500);
+            }, 800);
         };
 
         // Fonctions 2 & 3 : PDF Texte (Complet ou Compact)
@@ -673,7 +702,7 @@
             daysOrder.forEach(day => {
                 const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
                 const dayColumn = document.createElement('div');
-                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-44';
+                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-64';
                 
                 const isToday = new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
                 if (isToday) dayColumn.id = 'today-column';
