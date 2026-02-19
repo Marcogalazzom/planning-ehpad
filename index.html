@@ -185,17 +185,20 @@
         <!-- Header Poster -->
         <div class="flex justify-between items-center mb-8 border-b-4 border-slate-800 pb-4" id="posterHeader">
             <div class="flex items-center gap-6">
-                <div id="posterLogo" class="bg-emerald-100 text-emerald-700 p-6 rounded-full text-5xl">
+                <div id="posterLogo" class="bg-emerald-100 text-emerald-700 w-20 h-20 rounded-full flex items-center justify-center text-4xl">
                     <i class="fas fa-leaf"></i>
                 </div>
                 <div>
-                    <h1 class="text-5xl font-serif text-slate-800 font-bold mb-2">EHPAD Claudette Chesne</h1>
-                    <h2 id="posterSubTitle" class="text-3xl text-slate-600 font-sans">Planning des Activités</h2>
+                    <h1 class="text-5xl font-serif text-slate-800 font-bold mb-1">EHPAD Claudette Chesne</h1>
+                    <div class="flex items-center gap-3">
+                        <span id="posterBadge" class="bg-emerald-600 text-white text-sm font-bold px-3 py-1 rounded-md uppercase tracking-wider">Planning</span>
+                        <h2 id="posterSubTitle" class="text-3xl font-sans font-bold text-emerald-700">Animation & Vie Sociale</h2>
+                    </div>
                 </div>
             </div>
-            <div class="text-right">
-                <p class="text-xl text-slate-500 uppercase tracking-widest font-bold mb-1">Semaine du</p>
-                <p id="posterDateRange" class="text-4xl font-bold text-slate-800">Lundi au Dimanche</p>
+            <div class="text-right border-2 border-slate-300 rounded-xl px-6 py-3">
+                <p class="text-sm text-slate-500 uppercase tracking-widest font-bold mb-1">Semaine du</p>
+                <p id="posterDateRange" class="text-3xl font-bold text-slate-800">16/02 au 22/02</p>
             </div>
         </div>
 
@@ -205,8 +208,9 @@
         </div>
 
         <!-- Footer Poster -->
-        <div class="mt-8 text-center text-slate-400 text-lg border-t pt-4">
-            <p>EHPAD Claudette Chesne</p>
+        <div class="mt-auto flex justify-between items-center text-slate-400 text-sm border-t pt-3 px-2">
+            <p><i class="fas fa-info-circle text-blue-400 mr-1"></i> Les activités sont susceptibles d'être modifiées.</p>
+            <p id="posterFooterDate">EHPAD Claudette Chesne - Document affiché le 19/02/2026</p>
         </div>
     </div>
 
@@ -402,16 +406,23 @@
             const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit);
             
             // Header Poster
-            const subTitleText = currentUnit === 'main' ? "Planning Animation" : "Planning PASA";
+            const subTitleText = currentUnit === 'main' ? "Animation & Vie Sociale" : "Planning PASA";
             const mainColor = currentUnit === 'main' ? 'text-emerald-700' : 'text-amber-700';
             const logoColor = currentUnit === 'main' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
             const borderColor = currentUnit === 'main' ? 'border-emerald-600' : 'border-amber-600';
+            const badgeColor = currentUnit === 'main' ? 'bg-emerald-600' : 'bg-amber-600';
             
             document.getElementById('posterSubTitle').innerText = subTitleText;
             document.getElementById('posterSubTitle').className = `text-3xl font-sans font-bold ${mainColor}`;
-            document.getElementById('posterLogo').className = `${logoColor} p-6 rounded-full text-5xl`;
+            document.getElementById('posterBadge').className = `${badgeColor} text-white text-sm font-bold px-3 py-1 rounded-md uppercase tracking-wider`;
+            document.getElementById('posterLogo').className = `${logoColor} w-20 h-20 rounded-full flex items-center justify-center text-4xl`;
             document.getElementById('posterHeader').className = `flex justify-between items-center mb-8 border-b-4 ${borderColor} pb-4`;
             document.getElementById('posterDateRange').innerText = `${weekDates['Lundi']} au ${weekDates['Dimanche']}`;
+            
+            // Footer with current date
+            const today = new Date();
+            const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+            document.getElementById('posterFooterDate').innerText = `EHPAD Claudette Chesne - Document affiché le ${formattedDate}`;
 
             // Grid Poster
             posterGrid.innerHTML = '';
@@ -436,19 +447,16 @@
                 } else {
                     dayActivities.forEach(act => {
                         const style = activityTypes[act.type] || activityTypes.social;
+                        const bgColor = style.color.split(' ')[0];
+                        const textColor = style.color.split(' ')[1];
                         colHtml += `
-                            <div class="bg-white border-l-8 rounded-r-lg shadow-sm p-3 relative" style="border-left-color: currentColor;">
-                                <div class="flex items-start gap-2">
-                                    <div class="${style.color.split(' ')[1]} text-xl w-8 text-center pt-1">
-                                        <i class="fas ${style.icon}"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-xl text-slate-800">${act.time}</p>
-                                        <p class="font-bold text-lg text-slate-700 leading-tight">${act.title}</p>
-                                        ${act.desc ? `<p class="text-sm text-slate-500 mt-1">${act.desc}</p>` : ''}
-                                    </div>
+                            <div class="bg-white rounded-lg shadow-sm p-3 relative border border-slate-100">
+                                <div class="absolute top-2 right-2 ${bgColor} ${textColor} w-8 h-8 rounded-full flex items-center justify-center text-sm">
+                                    <i class="fas ${style.icon}"></i>
                                 </div>
-                                <div class="${style.color.split(' ')[1]} absolute left-0 top-0 bottom-0 w-2 rounded-l-lg bg-current opacity-20"></div>
+                                <p class="font-bold text-lg text-slate-800">${act.time}</p>
+                                <p class="font-bold text-base text-slate-700 leading-tight pr-10">${act.title}</p>
+                                ${act.desc ? `<p class="text-xs text-slate-400 mt-1 italic">${act.desc}</p>` : ''}
                             </div>
                         `;
                     });
