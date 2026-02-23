@@ -233,14 +233,20 @@
 
             <!-- SECTION IMPORT IA -->
             <div class="mt-8 pt-6 border-t border-slate-200">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-md">
-                        <i class="fas fa-robot text-xl"></i>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-md">
+                            <i class="fas fa-robot text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-bold text-slate-800">Import IA NetSoins</h4>
+                            <p class="text-sm text-slate-500">Ajoutez une capture d'écran du planning NetSoins pour le transcrire automatiquement.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="text-lg font-bold text-slate-800">Import IA NetSoins</h4>
-                        <p class="text-sm text-slate-500">Ajoutez une capture d'écran du planning NetSoins pour le transcrire automatiquement.</p>
-                    </div>
+                    <!-- Bouton pour réinitialiser la clé API -->
+                    <button onclick="resetApiKey()" class="text-xs text-slate-500 hover:text-red-500 transition border border-slate-200 hover:border-red-200 rounded px-2 py-1 flex items-center gap-1 bg-white">
+                        <i class="fas fa-key"></i> <span class="hidden sm:inline">Changer Clé API</span>
+                    </button>
                 </div>
 
                 <div class="flex items-center justify-center w-full relative">
@@ -401,10 +407,6 @@
         }
 
         const PASSWORD_HASH = "a0f6b1c5f6300240814fbcabecd15da01f7de602e4a2522cd74af5320b040161"; 
-        
-        // --- CLÉ API GEMINI DÉFINIE PAR L'ENVIRONNEMENT ---
-        const apiKey = ""; 
-        // ------------------------------------------------
 
         let isAdmin = false;
         let allActivities = []; 
@@ -804,6 +806,14 @@
             }
         }
 
+        // --- GESTION DE LA CLÉ API LOCALE ---
+        window.resetApiKey = () => {
+            if(confirm("Voulez-vous effacer la clé API Gemini de votre navigateur ?")) {
+                localStorage.removeItem('geminiApiKey');
+                showToast("Clé API effacée !", "info");
+            }
+        };
+
         // --- IMPORT IA (NETSOINS) AMÉLIORÉ ---
         async function fetchWithRetry(url, options, maxRetries = 5) {
             const delays = [1000, 2000, 4000, 8000, 16000];
@@ -825,6 +835,19 @@
             const file = e.target.files[0];
             if(!file) return;
 
+            // --- VÉRIFICATION DE LA CLÉ API ICI ---
+            let apiKey = localStorage.getItem('geminiApiKey');
+            if (!apiKey) {
+                apiKey = prompt("🔒 Sécurité : Veuillez entrer votre clé API Google Gemini pour utiliser l'IA.\nElle sera sauvegardée uniquement sur votre navigateur.");
+                if (!apiKey) {
+                    showToast("Clé API requise pour l'importation.", "error");
+                    fileInput.value = '';
+                    return;
+                }
+                localStorage.setItem('geminiApiKey', apiKey);
+            }
+            // --------------------------------------
+
             const reader = new FileReader();
             const imgPreview = document.getElementById('imagePreview');
             const scanOverlay = document.getElementById('scanOverlay');
@@ -842,9 +865,8 @@
                 const mimeType = file.type;
                 
                 try {
-                    await processImageWithAI(base64Data, mimeType);
+                    await processImageWithAI(base64Data, mimeType, apiKey);
                 } finally {
-                    // Nettoyage de l'interface, même en cas d'erreur
                     scanOverlay.classList.add('hidden');
                     loader.classList.add('hidden');
                     loader.classList.remove('flex');
@@ -854,7 +876,7 @@
             reader.readAsDataURL(file);
         });
 
-        async function processImageWithAI(base64Data, mimeType) {
+        async function processImageWithAI(base64Data, mimeType, apiKey) {
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
                 
@@ -906,11 +928,17 @@ Règles de lecture (TRÈS IMPORTANT) :
                 });
 
                 let rawJsonText = response.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!rawJsonText) throw new Error("Réponse vide de l'IA");
+                if (!rawJsonText) {
+                    // Gestion de l'erreur si la clé API est invalide
+                    if (response.error) {
+                        showToast(`Erreur d'autorisation: Clé API invalide.`, "error");
+                        localStorage.removeItem('geminiApiKey');
+                        throw new Error("Clé API invalide");
+                    }
+                    throw new Error("Réponse vide de l'IA");
+                }
 
-                // Nettoyage au cas où l'IA renverrait du Markdown (```json ... ```)
                 rawJsonText = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
-                
                 const activities = JSON.parse(rawJsonText);
                 
                 if(!Array.isArray(activities) || activities.length === 0) {
@@ -920,14 +948,12 @@ Règles de lecture (TRÈS IMPORTANT) :
 
                 const validDays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
-                // Enregistrement des activités dans Firestore
                 let count = 0;
                 for (const act of activities) {
                     if(!db) break;
                     
-                    // Sécurité : Normalisation de la chaîne de caractère du jour
                     let safeDay = act.day ? (act.day.charAt(0).toUpperCase() + act.day.slice(1).toLowerCase()) : "Lundi";
-                    if (!validDays.includes(safeDay)) safeDay = "Lundi"; // fallback
+                    if (!validDays.includes(safeDay)) safeDay = "Lundi"; 
                     
                     const newActivity = {
                         day: safeDay,
@@ -948,7 +974,7 @@ Règles de lecture (TRÈS IMPORTANT) :
 
             } catch (err) {
                 console.error("Erreur Gemini:", err);
-                showToast("Erreur lors de l'analyse IA de l'image.", "error");
+                // On ne reaffiche pas l'erreur de toast ici si on l'a déjà gérée plus haut
             }
         }
 
