@@ -133,7 +133,7 @@
 
                 <!-- Toggle Semaine (Visible uniquement Admin) -->
                 <div id="adminWeekToggle" class="hidden space-x-2 bg-slate-200 p-1 rounded-full w-full md:w-fit">
-                    <button onclick="switchWeek(0)" id="btnWeekCurrent" class="flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold bg-slate-800 text-white shadow transition-all">Cette semaine</button>
+                    <button onclick="switchWeek(0)" id="btnWeekCurrent" class="flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold bg-indigo-600 text-white shadow transition-all">Cette semaine</button>
                     <button onclick="switchWeek(7)" id="btnWeekNext" class="flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold text-slate-600 bg-white hover:bg-slate-100 transition-all">Semaine prochaine <i class="fas fa-eye-slash ml-1 opacity-50" title="Invisible au public"></i></button>
                 </div>
             </div>
@@ -244,7 +244,7 @@
                         </div>
                     </div>
                     <!-- Bouton pour réinitialiser la clé API -->
-                    <button onclick="resetApiKey()" class="text-xs text-slate-500 hover:text-red-500 transition border border-slate-200 hover:border-red-200 rounded px-2 py-1 flex items-center gap-1 bg-white">
+                    <button onclick="resetApiKey()" class="text-xs text-slate-500 hover:text-red-500 transition border border-slate-200 hover:border-red-200 rounded px-2 py-1 flex items-center gap-1 bg-white" title="Changer la clé API Gemini">
                         <i class="fas fa-key"></i> <span class="hidden sm:inline">Changer Clé API</span>
                     </button>
                 </div>
@@ -388,6 +388,7 @@
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // Garde la configuration d'origine
         const firebaseConfig = {
             apiKey: "AIzaSyBVMlD2Jdm-Ql4CyDA_Tw-_XUjvEUYkhok",
             authDomain: "planning-ehpad.firebaseapp.com",
@@ -815,16 +816,23 @@
         };
 
         // --- IMPORT IA (NETSOINS) AMÉLIORÉ ---
+        
+        // Nouvelle fonction de fetch silencieuse avec Backoff Exponentiel
         async function fetchWithRetry(url, options, maxRetries = 5) {
             const delays = [1000, 2000, 4000, 8000, 16000];
             for (let i = 0; i < maxRetries; i++) {
                 try {
                     const response = await fetch(url, options);
-                    if (!response.ok) throw new Error(`Erreur API: ${response.status}`);
-                    return await response.json();
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        // On retourne explicitement l'erreur pour la gérer plus bas
+                        return { error: data.error || { code: response.status, message: "Erreur API Google" } };
+                    }
+                    return data;
                 } catch (error) {
                     if (i === maxRetries - 1) throw error;
-                    console.log(`Nouvelle tentative API (${i+1}/${maxRetries})...`);
+                    // Attente sans flood la console
                     await new Promise(resolve => setTimeout(resolve, delays[i]));
                 }
             }
@@ -835,18 +843,23 @@
             const file = e.target.files[0];
             if(!file) return;
 
-            // --- VÉRIFICATION DE LA CLÉ API ICI ---
+            // --- GESTION SÉCURISÉE DE LA CLÉ API (Option 1) ---
             let apiKey = localStorage.getItem('geminiApiKey');
+            
+            // Si la clé n'existe pas, on affiche une popup pour la demander à l'utilisateur
             if (!apiKey) {
-                apiKey = prompt("🔒 Sécurité : Veuillez entrer votre clé API Google Gemini pour utiliser l'IA.\nElle sera sauvegardée uniquement sur votre navigateur.");
-                if (!apiKey) {
-                    showToast("Clé API requise pour l'importation.", "error");
-                    fileInput.value = '';
-                    return;
+                apiKey = prompt("🔒 Sécurité : Veuillez entrer votre clé API Google Gemini pour utiliser l'IA.\nElle sera sauvegardée uniquement sur votre navigateur actuel.");
+                
+                if (!apiKey || apiKey.trim() === "") {
+                    showToast("L'importation IA nécessite une clé API.", "error");
+                    fileInput.value = ''; // On réinitialise l'input
+                    return; // On arrête l'exécution ici
                 }
-                localStorage.setItem('geminiApiKey', apiKey);
+                
+                // On sauvegarde la clé dans le navigateur pour les prochaines fois
+                localStorage.setItem('geminiApiKey', apiKey.trim());
             }
-            // --------------------------------------
+            // --------------------------------------------------
 
             const reader = new FileReader();
             const imgPreview = document.getElementById('imagePreview');
@@ -866,6 +879,9 @@
                 
                 try {
                     await processImageWithAI(base64Data, mimeType, apiKey);
+                } catch (err) {
+                    console.error("Erreur lors du traitement IA :", err);
+                    showToast(err.message || "Erreur lors de l'analyse.", "error");
                 } finally {
                     scanOverlay.classList.add('hidden');
                     loader.classList.add('hidden');
@@ -877,10 +893,9 @@
         });
 
         async function processImageWithAI(base64Data, mimeType, apiKey) {
-            try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-                
-                const prompt = `Tu es un expert en extraction de données. Analyse attentivement cette capture d'écran d'un planning NetSoins.
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            
+            const prompt = `Tu es un expert en extraction de données. Analyse attentivement cette capture d'écran d'un planning NetSoins.
 Extraire TOUTES les activités (il y en a souvent 3 à 5 par jour).
 
 Pour CHAQUE activité trouvée, tu dois fournir un objet JSON.
@@ -894,88 +909,99 @@ Règles de lecture (TRÈS IMPORTANT) :
 6. TYPE ('type') : Analyse le sens du titre et assigne l'une de ces catégories exactes : sport, cognitive, creative, music, food, social, outing, festive, sensory, animal, religious, cinema. Exemples de logique : Volley/Gym/Yoga -> sport, Repas/Cuisine -> food, Messe -> religious, Loto/jeux/Lecture -> cognitive, Tricot/Peinture -> creative, Chansons/Chant -> music, rencontres/papote -> social, fête/anniversaire -> festive.
 `;
 
-                const payload = {
-                    contents: [{
-                        role: "user",
-                        parts: [
-                            { text: prompt },
-                            { inlineData: { mimeType: mimeType, data: base64Data } }
-                        ]
-                    }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "ARRAY",
-                            items: {
-                                type: "OBJECT",
-                                properties: {
-                                    day: { type: "STRING", description: "Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, ou Dimanche" },
-                                    time: { type: "STRING", description: "Format HH:MM" },
-                                    title: { type: "STRING", description: "Titre sans les nombres de participation" },
-                                    unit: { type: "STRING", description: "pasa ou main" },
-                                    type: { type: "STRING", description: "Catégorie en minuscules (ex: sport, food, cognitive...)" }
-                                },
-                                required: ["day", "time", "title", "unit", "type"]
+            // Utilisation d'un Schéma de réponse "OBJECT" avec une liste "activities" pour une compatibilité parfaite
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType: mimeType, data: base64Data } }
+                    ]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            activities: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        day: { type: "STRING", description: "Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, ou Dimanche" },
+                                        time: { type: "STRING", description: "Format HH:MM" },
+                                        title: { type: "STRING", description: "Titre sans les nombres de participation" },
+                                        unit: { type: "STRING", description: "pasa ou main" },
+                                        type: { type: "STRING", description: "Catégorie en minuscules (ex: sport, food, cognitive...)" }
+                                    },
+                                    required: ["day", "time", "title", "unit", "type"]
+                                }
                             }
-                        }
+                        },
+                        required: ["activities"]
                     }
-                };
-
-                const response = await fetchWithRetry(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                let rawJsonText = response.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!rawJsonText) {
-                    // Gestion de l'erreur si la clé API est invalide
-                    if (response.error) {
-                        showToast(`Erreur d'autorisation: Clé API invalide.`, "error");
-                        localStorage.removeItem('geminiApiKey');
-                        throw new Error("Clé API invalide");
-                    }
-                    throw new Error("Réponse vide de l'IA");
                 }
+            };
 
-                rawJsonText = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
-                const activities = JSON.parse(rawJsonText);
-                
-                if(!Array.isArray(activities) || activities.length === 0) {
-                    showToast("Aucune activité valide trouvée sur l'image.", "info");
-                    return;
+            const response = await fetchWithRetry(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            // Gérer les erreurs de clés API (Google renvoie généralement un code d'erreur HTTP 400 ou 403)
+            if (response.error) {
+                const errCode = response.error.code;
+                if (errCode === 400 || errCode === 403 || errCode === 401) {
+                    // Si la clé est refusée, on la supprime de la mémoire pour permettre une nouvelle saisie
+                    localStorage.removeItem('geminiApiKey');
+                    throw new Error("Clé API refusée ou invalide. Veuillez réessayer avec une clé valide.");
                 }
-
-                const validDays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-
-                let count = 0;
-                for (const act of activities) {
-                    if(!db) break;
-                    
-                    let safeDay = act.day ? (act.day.charAt(0).toUpperCase() + act.day.slice(1).toLowerCase()) : "Lundi";
-                    if (!validDays.includes(safeDay)) safeDay = "Lundi"; 
-                    
-                    const newActivity = {
-                        day: safeDay,
-                        time: act.time,
-                        type: act.type || 'social',
-                        title: act.title,
-                        desc: "",
-                        unit: act.unit === 'pasa' ? 'pasa' : 'main',
-                        weekId: viewedWeekId, 
-                        isRecurring: false,
-                        createdAt: Date.now()
-                    };
-                    await addDoc(collection(db, "activities"), newActivity);
-                    count++;
-                }
-
-                showToast(`${count} activités importées avec succès !`, "success");
-
-            } catch (err) {
-                console.error("Erreur Gemini:", err);
-                // On ne reaffiche pas l'erreur de toast ici si on l'a déjà gérée plus haut
+                throw new Error("Erreur avec l'API Gemini : " + (response.error.message || "Erreur inconnue"));
             }
+
+            let rawJsonText = response.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!rawJsonText) {
+                throw new Error("Réponse vide de l'IA");
+            }
+
+            // Nettoyage et Parse du JSON
+            rawJsonText = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const parsedData = JSON.parse(rawJsonText);
+            
+            // On récupère le tableau d'activités depuis notre nouvel objet structuré
+            const activities = parsedData.activities;
+            
+            if(!Array.isArray(activities) || activities.length === 0) {
+                showToast("Aucune activité valide trouvée sur l'image.", "info");
+                return;
+            }
+
+            const validDays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+            let count = 0;
+            for (const act of activities) {
+                if(!db) break;
+                
+                let safeDay = act.day ? (act.day.charAt(0).toUpperCase() + act.day.slice(1).toLowerCase()) : "Lundi";
+                if (!validDays.includes(safeDay)) safeDay = "Lundi"; 
+                
+                const newActivity = {
+                    day: safeDay,
+                    time: act.time,
+                    type: act.type || 'social',
+                    title: act.title,
+                    desc: "",
+                    unit: act.unit === 'pasa' ? 'pasa' : 'main',
+                    weekId: viewedWeekId, 
+                    isRecurring: false,
+                    createdAt: Date.now()
+                };
+                await addDoc(collection(db, "activities"), newActivity);
+                count++;
+            }
+
+            showToast(`${count} activités importées avec succès !`, "success");
         }
 
         // --- RENDER SCHEDULE ---
