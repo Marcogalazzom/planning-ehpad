@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
     
+    <!-- Librairies Export PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -69,10 +70,29 @@
             pointer-events: none;
             opacity: 0.6;
         }
+
+        /* Animation Loading AI */
+        .scan-line {
+            width: 100%;
+            height: 4px;
+            background-color: #10b981;
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: scan 2s linear infinite;
+            box-shadow: 0 0 10px #10b981;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
     </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col transition-colors duration-500" id="mainBody">
 
+    <!-- En-tête -->
     <header id="mainHeader" class="bg-white shadow-md sticky top-0 z-50 border-b-4 border-emerald-500 transition-colors duration-500">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-4">
@@ -100,6 +120,7 @@
                 </div>
             </div>
 
+            <!-- ONGLETS & SÉLECTEUR SEMAINE -->
             <div class="flex flex-col md:flex-row items-center justify-center gap-4 no-print">
                 <div class="flex space-x-2 bg-slate-100 p-1 rounded-xl w-full md:w-fit">
                     <button onclick="switchUnit('main')" id="tabMain" class="flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700">
@@ -110,6 +131,7 @@
                     </button>
                 </div>
 
+                <!-- Toggle Semaine (Visible uniquement Admin) -->
                 <div id="adminWeekToggle" class="hidden space-x-2 bg-slate-200 p-1 rounded-full w-full md:w-fit">
                     <button onclick="switchWeek(0)" id="btnWeekCurrent" class="flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold bg-slate-800 text-white shadow transition-all">Cette semaine</button>
                     <button onclick="switchWeek(7)" id="btnWeekNext" class="flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold text-slate-600 bg-white hover:bg-slate-100 transition-all">Semaine prochaine <i class="fas fa-eye-slash ml-1 opacity-50" title="Invisible au public"></i></button>
@@ -118,6 +140,7 @@
         </div>
     </header>
 
+    <!-- Toast -->
     <div id="toast" class="fixed top-24 right-5 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-xl transform translate-x-full transition-transform duration-300 z-50 flex items-center gap-3">
         <i class="fas fa-info-circle text-emerald-400"></i>
         <span id="toastMessage">Message</span>
@@ -125,6 +148,7 @@
 
     <main class="flex-grow container mx-auto px-4 py-8">
         
+        <!-- Bannière d'info Mode Préparation -->
         <div id="nextWeekBanner" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-5 mb-8 shadow-sm flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
                 <div class="bg-blue-100 text-blue-600 p-3 rounded-full text-2xl">
@@ -140,6 +164,7 @@
             </button>
         </div>
 
+        <!-- Interface Admin -->
         <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10 scroll-mt-64">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
                 <h3 id="formTitle" class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-edit"></i> Ajouter une activité</h3>
@@ -205,6 +230,43 @@
                     </button>
                 </div>
             </form>
+
+            <!-- SECTION IMPORT IA -->
+            <div class="mt-8 pt-6 border-t border-slate-200">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-md">
+                        <i class="fas fa-robot text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-slate-800">Import IA NetSoins</h4>
+                        <p class="text-sm text-slate-500">Ajoutez une capture d'écran du planning NetSoins pour le transcrire automatiquement.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-center w-full relative">
+                    <label for="netsoinsImage" class="flex flex-col items-center justify-center w-full h-32 border-2 border-indigo-200 border-dashed rounded-xl cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400 transition-all relative overflow-hidden group">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6 z-10">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-indigo-400 mb-2 group-hover:text-indigo-600 transition-colors"></i>
+                            <p class="mb-2 text-sm text-slate-600"><span class="font-semibold text-indigo-600">Cliquez pour importer</span> ou glissez une image</p>
+                            <p class="text-xs text-slate-500">PNG, JPG</p>
+                        </div>
+                        <input id="netsoinsImage" type="file" class="hidden" accept="image/png, image/jpeg" />
+                        
+                        <!-- Image Preview -->
+                        <img id="imagePreview" class="absolute inset-0 w-full h-full object-cover hidden opacity-30 grayscale" />
+                        <div id="scanOverlay" class="hidden scan-line"></div>
+                    </label>
+                </div>
+
+                <div id="aiLoadingIndicator" class="hidden mt-4 items-center gap-3 bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+                    <i class="fas fa-spinner fa-spin text-2xl text-indigo-600"></i>
+                    <div>
+                        <p class="font-bold text-indigo-800 text-sm">L'IA de Gemini analyse votre image...</p>
+                        <p class="text-xs text-indigo-600 mt-1">Extraction intelligente de NetSoins en cours (cela prend quelques secondes).</p>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <div id="scheduleGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
@@ -215,6 +277,7 @@
         </div>
     </main>
 
+    <!-- GABARIT POSTER (Invisible) -->
     <div id="poster-container">
         <i class="fas fa-leaf watermark"></i>
 
@@ -238,7 +301,8 @@
         </div>
 
         <div class="grid grid-cols-7 gap-5 flex-grow items-stretch relative z-10 w-full" id="posterGrid">
-            </div>
+            <!-- Rempli par JS -->
+        </div>
 
         <div class="mt-8 flex justify-between items-center text-slate-500 text-xl border-t border-slate-200 pt-6 relative z-10 font-medium w-full">
             <p><i class="fas fa-info-circle mr-2 text-emerald-500"></i> Les activités sont susceptibles d'être modifiées.</p>
@@ -246,6 +310,7 @@
         </div>
     </div>
 
+    <!-- MODAL D'EXPORTATION -->
     <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fade-in-up max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6 border-b pb-4 sticky top-0 bg-white z-10">
@@ -293,11 +358,11 @@
                         <p class="text-sm text-slate-600">Économique en encre</p>
                     </div>
                 </button>
-
             </div>
         </div>
     </div>
 
+    <!-- Login Modal -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4">
             <h3 class="text-2xl font-bold text-center mb-4">Admin</h3>
@@ -311,6 +376,7 @@
         </div>
     </div>
 
+    <!-- Configuration Firebase et Logique -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } 
@@ -336,6 +402,10 @@
 
         const PASSWORD_HASH = "a0f6b1c5f6300240814fbcabecd15da01f7de602e4a2522cd74af5320b040161"; 
         
+        // --- CLÉ API GEMINI DÉFINIE PAR L'ENVIRONNEMENT ---
+        const apiKey = ""; 
+        // ------------------------------------------------
+
         let isAdmin = false;
         let allActivities = []; 
         let currentUnit = 'main'; 
@@ -359,12 +429,12 @@
             cinema: { icon: 'fa-film', color: 'bg-teal-100 text-teal-700 border-teal-200' },
         };
 
-        // --- GESTION ABSOLUE DES SEMAINES ---
+        // --- GESTION DES SEMAINES ---
         function getWeekId(offsetDays = 0) {
             const d = new Date();
             d.setDate(d.getDate() + offsetDays);
             const day = d.getDay() === 0 ? 7 : d.getDay();
-            d.setDate(d.getDate() - day + 1); // Lundi
+            d.setDate(d.getDate() - day + 1);
             return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         }
 
@@ -377,7 +447,7 @@
             if (newCurrentWeek !== currentWeekId) location.reload();
         }, 3600000);
 
-        // --- GESTION DES UNITÉS ET NAVIGATION ---
+        // --- NAVIGATION UNITÉS ---
         window.switchUnit = (unit) => {
             currentUnit = unit;
             updateTheme(unit);
@@ -445,10 +515,10 @@
             return dates;
         }
 
+        // --- EXPORT PDF ---
         window.showExportModal = () => document.getElementById('exportModal').classList.remove('hidden');
         window.closeExportModal = () => document.getElementById('exportModal').classList.add('hidden');
 
-        // Export "Affiche" (accepte le paramètre mode: 'full' (7j) ou 'weekday' (5j))
         window.generateBeautifulPDF = async (mode = 'full') => {
             showToast("Génération de l'affiche en cours...", "info");
             document.getElementById('printDate').innerText = new Date().toLocaleDateString('fr-FR');
@@ -456,7 +526,6 @@
             const poster = document.getElementById('poster-container');
             const posterGrid = document.getElementById('posterGrid');
             const weekDates = getWeekDates();
-            // MODIFICATION ICI POUR INCLURE LES RÉCURRENTES
             const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && (a.weekId === viewedWeekId || a.isRecurring));
             
             const isMain = currentUnit === 'main';
@@ -470,7 +539,6 @@
             document.getElementById('posterSubTitle').innerText = isMain ? "Animation" : "PASA";
             document.getElementById('posterSubTitle').className = `text-4xl ${mainColorText} font-sans font-semibold`;
             
-            // Logique 5 Jours / 7 Jours
             const daysToExport = mode === 'weekday' ? daysOrder.slice(0, 5) : daysOrder;
             const gridColsClass = mode === 'weekday' ? 'grid-cols-5' : 'grid-cols-7';
             const endDateText = mode === 'weekday' ? 'Vendredi' : 'Dimanche';
@@ -481,9 +549,7 @@
             posterGrid.innerHTML = '';
             
             daysToExport.forEach(day => {
-                const dayActivities = unitActivities
-                    .filter(a => a.day === day)
-                    .sort((a, b) => a.time.localeCompare(b.time));
+                const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
                 
                 let colHtml = `
                     <div class="flex flex-col h-full bg-white rounded-2xl shadow-sm overflow-hidden border-2 border-slate-100">
@@ -548,7 +614,6 @@
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const weekDates = getWeekDates();
-            // MODIFICATION ICI POUR INCLURE LES RÉCURRENTES
             const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && (a.weekId === viewedWeekId || a.isRecurring));
             const unitName = currentUnit === 'main' ? 'Animation' : 'PASA';
             
@@ -615,7 +680,7 @@
             showToast('Document PDF généré !', 'success');
         };
 
-        // --- FIREBASE LISTEN (AVEC RÉTROCOMPATIBILITÉ) ---
+        // --- FIREBASE LISTEN & BASICS ---
         if(db) {
             const q = query(collection(db, "activities"));
             onSnapshot(q, (snapshot) => {
@@ -629,12 +694,10 @@
             });
         }
 
-        // --- BASCULE SEMAINE ---
         window.rolloverWeek = async () => {
             if(!confirm("Ceci va basculer le planning préparé en ligne. Continuer ?")) return;
             showToast("Bascule en cours...", "info");
             try {
-                // MODIFICATION ICI POUR PROTÉGER LES RÉCURRENTES (!a.isRecurring)
                 const currActs = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === currentWeekId && !a.isRecurring);
                 for(let act of currActs) { await deleteDoc(doc(db, "activities", act.id)); }
                 
@@ -646,7 +709,6 @@
             } catch(e) { showToast("Erreur lors de la bascule", "error"); }
         };
 
-        // --- DRAG AND DROP ---
         window.drag = (ev, id) => {
             if (!isAdmin) return;
             ev.dataTransfer.setData("text", id);
@@ -679,7 +741,6 @@
         document.getElementById('addActivityForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if(!db) return;
-            // MODIFICATION ICI POUR ENREGISTRER L'ÉTAT RÉCURRENT
             const newActivity = {
                 day: document.getElementById('inputDay').value,
                 time: document.getElementById('inputTime').value,
@@ -688,7 +749,7 @@
                 desc: document.getElementById('inputDesc').value,
                 unit: currentUnit,
                 weekId: viewedWeekId, 
-                isRecurring: document.getElementById('inputRecurring').checked, // <-- AJOUT
+                isRecurring: document.getElementById('inputRecurring').checked,
                 createdAt: Date.now()
             };
             try {
@@ -711,7 +772,6 @@
             document.getElementById('inputType').value = activity.type;
             document.getElementById('inputTitle').value = activity.title;
             document.getElementById('inputDesc').value = activity.desc || '';
-            // MODIFICATION ICI POUR COCHER LA CASE SI RÉCURRENTE
             document.getElementById('inputRecurring').checked = activity.isRecurring || false;
             
             editingId = id;
@@ -725,7 +785,6 @@
         window.cancelEdit = () => {
             editingId = null;
             document.getElementById('addActivityForm').reset();
-            // Sécurité : forcer la case à se décocher
             document.getElementById('inputRecurring').checked = false; 
             
             document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit"></i> Ajouter';
@@ -745,12 +804,159 @@
             }
         }
 
-        // --- RENDER ---
+        // --- IMPORT IA (NETSOINS) AMÉLIORÉ ---
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`Erreur API: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    console.log(`Nouvelle tentative API (${i+1}/${maxRetries})...`);
+                    await new Promise(resolve => setTimeout(resolve, delays[i]));
+                }
+            }
+        }
+
+        const fileInput = document.getElementById('netsoinsImage');
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            const imgPreview = document.getElementById('imagePreview');
+            const scanOverlay = document.getElementById('scanOverlay');
+            const loader = document.getElementById('aiLoadingIndicator');
+            
+            reader.onload = async (event) => {
+                const dataUrl = event.target.result;
+                imgPreview.src = dataUrl;
+                imgPreview.classList.remove('hidden');
+                scanOverlay.classList.remove('hidden');
+                loader.classList.remove('hidden');
+                loader.classList.add('flex');
+                
+                const base64Data = dataUrl.split(',')[1];
+                const mimeType = file.type;
+                
+                try {
+                    await processImageWithAI(base64Data, mimeType);
+                } finally {
+                    // Nettoyage de l'interface, même en cas d'erreur
+                    scanOverlay.classList.add('hidden');
+                    loader.classList.add('hidden');
+                    loader.classList.remove('flex');
+                    fileInput.value = '';
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        async function processImageWithAI(base64Data, mimeType) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                
+                const prompt = `Tu es un expert en extraction de données. Analyse attentivement cette capture d'écran d'un planning NetSoins.
+Extraire TOUTES les activités (il y en a souvent 3 à 5 par jour).
+
+Pour CHAQUE activité trouvée, tu dois fournir un objet JSON.
+
+Règles de lecture (TRÈS IMPORTANT) :
+1. JOUR ('day') : Identifie le jour selon la position de la colonne de gauche à droite. La 1ère colonne visible à gauche est TOUJOURS "Lundi", la 2ème "Mardi", la 3ème "Mercredi", la 4ème "Jeudi", la 5ème "Vendredi", la 6ème "Samedi", la 7ème "Dimanche".
+2. HEURE ('time') : Extraire l'heure (ex: 10h30, 14h29) et la convertir STRICTEMENT au format HH:MM. Arrondis à la demi-heure ou heure pile la plus proche (ex: 10h29 -> 10:30, 14h59 -> 15:00).
+3. TITRE ('title') : Retire les compteurs de places du type "0/10", "2/2", "0/0", "0/76", "0/12", "0/34", "0/5" situés après l'heure. Ne garde que le texte propre de l'activité (ex: "Atelier créatif PASA", "cuisine PASA", "Volley-ball", "rencontres et papotage").
+4. ACTIVITÉS ANNULÉES : Si le texte d'une activité est BARRÉ / RAYÉ (une ligne horizontale le traverse, ex: "revue de presse" barré), tu DOIS L'IGNORER complètement.
+5. UNITÉ ('unit') : Renvoie "pasa" si le titre contient le mot "PASA" ou "pasa", sinon renvoie "main".
+6. TYPE ('type') : Analyse le sens du titre et assigne l'une de ces catégories exactes : sport, cognitive, creative, music, food, social, outing, festive, sensory, animal, religious, cinema. Exemples de logique : Volley/Gym/Yoga -> sport, Repas/Cuisine -> food, Messe -> religious, Loto/jeux/Lecture -> cognitive, Tricot/Peinture -> creative, Chansons/Chant -> music, rencontres/papote -> social, fête/anniversaire -> festive.
+`;
+
+                const payload = {
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            { text: prompt },
+                            { inlineData: { mimeType: mimeType, data: base64Data } }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    day: { type: "STRING", description: "Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, ou Dimanche" },
+                                    time: { type: "STRING", description: "Format HH:MM" },
+                                    title: { type: "STRING", description: "Titre sans les nombres de participation" },
+                                    unit: { type: "STRING", description: "pasa ou main" },
+                                    type: { type: "STRING", description: "Catégorie en minuscules (ex: sport, food, cognitive...)" }
+                                },
+                                required: ["day", "time", "title", "unit", "type"]
+                            }
+                        }
+                    }
+                };
+
+                const response = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                let rawJsonText = response.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawJsonText) throw new Error("Réponse vide de l'IA");
+
+                // Nettoyage au cas où l'IA renverrait du Markdown (```json ... ```)
+                rawJsonText = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                const activities = JSON.parse(rawJsonText);
+                
+                if(!Array.isArray(activities) || activities.length === 0) {
+                    showToast("Aucune activité valide trouvée sur l'image.", "info");
+                    return;
+                }
+
+                const validDays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+                // Enregistrement des activités dans Firestore
+                let count = 0;
+                for (const act of activities) {
+                    if(!db) break;
+                    
+                    // Sécurité : Normalisation de la chaîne de caractère du jour
+                    let safeDay = act.day ? (act.day.charAt(0).toUpperCase() + act.day.slice(1).toLowerCase()) : "Lundi";
+                    if (!validDays.includes(safeDay)) safeDay = "Lundi"; // fallback
+                    
+                    const newActivity = {
+                        day: safeDay,
+                        time: act.time,
+                        type: act.type || 'social',
+                        title: act.title,
+                        desc: "",
+                        unit: act.unit === 'pasa' ? 'pasa' : 'main',
+                        weekId: viewedWeekId, 
+                        isRecurring: false,
+                        createdAt: Date.now()
+                    };
+                    await addDoc(collection(db, "activities"), newActivity);
+                    count++;
+                }
+
+                showToast(`${count} activités importées avec succès !`, "success");
+
+            } catch (err) {
+                console.error("Erreur Gemini:", err);
+                showToast("Erreur lors de l'analyse IA de l'image.", "error");
+            }
+        }
+
+        // --- RENDER SCHEDULE ---
         function renderSchedule() {
             const grid = document.getElementById('scheduleGrid');
             grid.innerHTML = '';
             const weekDates = getWeekDates();
-            // MODIFICATION ICI POUR AFFICHER LES RÉCURRENTES
             const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && (a.weekId === viewedWeekId || a.isRecurring));
 
             const nextWeekBanner = document.getElementById('nextWeekBanner');
@@ -792,7 +998,6 @@
                         const draggableAttr = isAdmin ? `draggable="true" ondragstart="drag(event, '${act.id}')"` : '';
                         const cursorClass = isAdmin ? 'cursor-grab active:cursor-grabbing' : '';
 
-                        // MODIFICATION ICI POUR L'ICÔNE RÉCURRENTE
                         html += `
                             <div class="activity-card relative bg-white border-l-4 ${style.color.split(' ')[2]} rounded-r-lg shadow-sm p-3 flex gap-3 items-start ${cursorClass}" ${draggableAttr}>
                                 <div class="${style.color.split(' ')[0]} ${style.color.split(' ')[1]} w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1 pointer-events-none">
@@ -865,7 +1070,7 @@
         window.logout = () => {
             isAdmin = false;
             cancelEdit();
-            switchWeek(0); // Retour à la semaine courante
+            switchWeek(0); 
             
             document.getElementById('adminWeekToggle').classList.add('hidden');
             document.getElementById('adminWeekToggle').classList.remove('flex');
