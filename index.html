@@ -226,7 +226,7 @@
                 <div class="flex flex-col">
                     <h1 class="text-6xl font-serif text-slate-800 font-black tracking-tight leading-tight">EHPAD Claudette Chesne</h1>
                     <div class="flex items-center gap-4 mt-2">
-                        <h2 class="text-4xl text-emerald-700 font-sans font-semibold"><span class="font-light tracking-wide">Planning</span> <span id="posterSubTitle">Animation</span></h2>
+                        <h2 class="text-4xl font-sans font-semibold"><span class="font-light tracking-wide">Planning</span> <span id="posterSubTitle">Animation</span></h2>
                     </div>
                 </div>
             </div>
@@ -261,7 +261,7 @@
                         <i class="fas fa-image text-2xl"></i>
                     </div>
                     <div class="text-left flex-grow">
-                        <h4 class="font-bold text-slate-800 text-lg">Affiche Murale <span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-2">Recommandé</span></h4>
+                        <h4 class="font-bold text-slate-800 text-lg">Affiche Murale</h4>
                         <p class="text-sm text-slate-600">Design couleur format A4 Paysage</p>
                     </div>
                 </button>
@@ -286,15 +286,6 @@
                     </div>
                 </button>
 
-                <button onclick="window.print()" class="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-slate-500 hover:bg-slate-100 transition group">
-                    <div class="bg-slate-100 text-slate-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-slate-200 transition">
-                        <i class="fas fa-print text-xl"></i>
-                    </div>
-                    <div class="text-left flex-grow">
-                        <h4 class="font-bold text-slate-800">Impression Directe</h4>
-                        <p class="text-sm text-slate-600">Imprimer la vue écran</p>
-                    </div>
-                </button>
             </div>
         </div>
     </div>
@@ -469,7 +460,7 @@
             
             document.getElementById('posterLogo').className = `${logoColorClass} text-white w-32 h-32 flex items-center justify-center rounded-3xl text-6xl shadow-md border-4 border-white`;
             document.getElementById('posterHeader').className = `flex items-center justify-between mb-8 pb-6 border-b-4 ${borderColor} relative z-10 w-full`;
-            document.getElementById('posterSubTitle').innerText = isMain ? "Animation & Vie Sociale" : "Unité PASA";
+            document.getElementById('posterSubTitle').innerText = isMain ? "Animation" : "PASA";
             document.getElementById('posterSubTitle').className = `text-4xl ${mainColorText} font-sans font-semibold`;
             document.getElementById('posterDateRange').innerText = `${weekDates['Lundi']} au ${weekDates['Dimanche']}`;
 
