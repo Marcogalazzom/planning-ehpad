@@ -84,7 +84,7 @@
                     </div>
                     <div>
                         <h1 class="text-xl md:text-3xl font-bold text-slate-800">EHPAD Claudette Chesne</h1>
-                        <p id="subTitle" class="text-slate-500 text-sm md:text-base">Planning des activités</p>
+                        <p id="subTitle" class="text-slate-500 text-sm md:text-base">Planning Animation</p>
                     </div>
                 </div>
                 
@@ -249,23 +249,36 @@
 
     <!-- MODAL D'EXPORTATION -->
     <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fade-in-up">
-            <div class="flex justify-between items-center mb-6 border-b pb-4">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fade-in-up max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6 border-b pb-4 sticky top-0 bg-white z-10">
                 <h3 class="text-2xl font-bold text-slate-800">Options d'impression</h3>
-                <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+                <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-600 text-3xl">&times;</button>
             </div>
             
-            <div class="space-y-3 mb-6">
-                <button onclick="generateBeautifulPDF()" class="w-full flex items-center gap-4 p-4 border-2 border-emerald-100 bg-emerald-50/50 rounded-xl hover:border-emerald-500 hover:bg-emerald-100 transition group">
+            <div class="space-y-3 mb-2">
+                <!-- 1. AFFICHE 7 JOURS -->
+                <button onclick="generateBeautifulPDF('full')" class="w-full flex items-center gap-4 p-4 border-2 border-emerald-100 bg-emerald-50/50 rounded-xl hover:border-emerald-500 hover:bg-emerald-100 transition group">
                     <div class="bg-emerald-100 text-emerald-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition">
-                        <i class="fas fa-image text-2xl"></i>
+                        <i class="fas fa-calendar-week text-2xl"></i>
                     </div>
                     <div class="text-left flex-grow">
-                        <h4 class="font-bold text-slate-800 text-lg">Affiche Murale</h4>
-                        <p class="text-sm text-slate-600">Design couleur format A4 Paysage</p>
+                        <h4 class="font-bold text-slate-800 text-lg">Affiche Murale (7 jours)</h4>
+                        <p class="text-sm text-slate-600">Design Canva complet (Lun - Dim)</p>
                     </div>
                 </button>
 
+                <!-- 2. AFFICHE 5 JOURS -->
+                <button onclick="generateBeautifulPDF('weekday')" class="w-full flex items-center gap-4 p-4 border-2 border-teal-100 bg-teal-50/50 rounded-xl hover:border-teal-500 hover:bg-teal-100 transition group">
+                    <div class="bg-teal-100 text-teal-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-teal-200 transition">
+                        <i class="fas fa-calendar-day text-2xl"></i>
+                    </div>
+                    <div class="text-left flex-grow">
+                        <h4 class="font-bold text-slate-800 text-lg">Affiche Murale (5 jours)</h4>
+                        <p class="text-sm text-slate-600">Design Canva large (Lun - Ven)</p>
+                    </div>
+                </button>
+
+                <!-- 3. PDF CLASSIQUE -->
                 <button onclick="exportPDF('complete')" class="w-full flex items-center gap-4 p-4 border-2 border-blue-100 bg-blue-50/50 rounded-xl hover:border-blue-500 hover:bg-blue-100 transition group">
                     <div class="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition">
                         <i class="fas fa-file-pdf text-xl"></i>
@@ -276,13 +289,14 @@
                     </div>
                 </button>
 
+                <!-- 4. COMPACT -->
                 <button onclick="exportPDF('compact')" class="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-slate-500 hover:bg-slate-100 transition group">
                     <div class="bg-slate-100 text-slate-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-slate-200 transition">
                         <i class="fas fa-list text-xl"></i>
                     </div>
                     <div class="text-left flex-grow">
                         <h4 class="font-bold text-slate-800">Liste Compacte</h4>
-                        <p class="text-sm text-slate-600">Économique en encre (N&B)</p>
+                        <p class="text-sm text-slate-600">Économique en encre</p>
                     </div>
                 </button>
 
@@ -366,7 +380,6 @@
         let nextWeekId = getWeekId(7);    
         let viewedWeekId = currentWeekId; 
 
-        // Auto-refresh pour écrans allumés en continu
         setInterval(() => {
             const newCurrentWeek = getWeekId(0);
             if (newCurrentWeek !== currentWeekId) location.reload();
@@ -415,7 +428,7 @@
                 logoBg.classList.remove('bg-amber-100', 'text-amber-600'); logoBg.classList.add('bg-emerald-100', 'text-emerald-600');
                 btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700";
                 btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
-                subTitle.innerText = "Planning des activités";
+                subTitle.innerText = "Planning Animation";
                 if(submitBtn) { submitBtn.className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2"; }
                 if(adminBadge) { adminBadge.className = "bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded"; }
             } else {
@@ -443,7 +456,8 @@
         window.showExportModal = () => document.getElementById('exportModal').classList.remove('hidden');
         window.closeExportModal = () => document.getElementById('exportModal').classList.add('hidden');
 
-        window.generateBeautifulPDF = async () => {
+        // Export "Affiche" (accepte le paramètre mode: 'full' (7j) ou 'weekday' (5j))
+        window.generateBeautifulPDF = async (mode = 'full') => {
             showToast("Génération de l'affiche en cours...", "info");
             document.getElementById('printDate').innerText = new Date().toLocaleDateString('fr-FR');
             
@@ -462,12 +476,22 @@
             document.getElementById('posterHeader').className = `flex items-center justify-between mb-8 pb-6 border-b-4 ${borderColor} relative z-10 w-full`;
             document.getElementById('posterSubTitle').innerText = isMain ? "Animation" : "PASA";
             document.getElementById('posterSubTitle').className = `text-4xl ${mainColorText} font-sans font-semibold`;
-            document.getElementById('posterDateRange').innerText = `${weekDates['Lundi']} au ${weekDates['Dimanche']}`;
-
+            
+            // Logique 5 Jours / 7 Jours
+            const daysToExport = mode === 'weekday' ? daysOrder.slice(0, 5) : daysOrder;
+            const gridColsClass = mode === 'weekday' ? 'grid-cols-5' : 'grid-cols-7';
+            const endDateText = mode === 'weekday' ? 'Vendredi' : 'Dimanche';
+            
+            document.getElementById('posterDateRange').innerText = `${weekDates['Lundi']} au ${weekDates[endDateText]}`;
+            posterGrid.className = `grid ${gridColsClass} gap-5 flex-grow items-stretch relative z-10 w-full`;
+            
             posterGrid.innerHTML = '';
             
-            daysOrder.forEach(day => {
-                const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
+            daysToExport.forEach(day => {
+                const dayActivities = unitActivities
+                    .filter(a => a.day === day)
+                    .sort((a, b) => a.time.localeCompare(b.time));
+                
                 let colHtml = `
                     <div class="flex flex-col h-full bg-white rounded-2xl shadow-sm overflow-hidden border-2 border-slate-100">
                         <div class="${mainColorClass} text-white p-4 text-center relative overflow-hidden">
@@ -479,7 +503,7 @@
                 `;
                 
                 if (dayActivities.length === 0) {
-                    colHtml += `<div class="text-center py-10 opacity-40"><i class="fas fa-bed text-5xl mb-3"></i><p class="text-xl font-medium">Repos</p></div>`;
+                    colHtml += `<div class="text-center py-10 opacity-30 text-slate-400"><i class="fas fa-bed text-5xl mb-3"></i><p class="text-xl font-medium">Repos</p></div>`;
                 } else {
                     dayActivities.forEach(act => {
                         const style = activityTypes[act.type] || activityTypes.social;
@@ -518,7 +542,9 @@
                     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
                     
                     const weekPrefix = viewedWeekId === nextWeekId ? 'Sem_Prochaine_' : '';
-                    pdf.save(`Affiche_${weekPrefix}${currentUnit}_${new Date().toISOString().split('T')[0]}.pdf`);
+                    const modeSuffix = mode === 'weekday' ? '_5Jours' : '_7Jours';
+                    pdf.save(`Affiche_${weekPrefix}${currentUnit}${modeSuffix}_${new Date().toISOString().split('T')[0]}.pdf`);
+                    
                     showToast("Affiche téléchargée !", "success");
                     closeExportModal();
                 } catch (err) { showToast("Erreur lors de la création", "error"); }
@@ -602,7 +628,6 @@
                 allActivities = [];
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    // LIGNE MAGIQUE : Appliquer la date de cette semaine aux anciennes activités
                     if (!data.weekId) { data.weekId = currentWeekId; }
                     allActivities.push({ ...data, id: doc.id });
                 });
@@ -795,8 +820,9 @@
 
         // --- AUTH ---
         window.toggleAdminPanel = () => {
-            if (isAdmin) { document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' }); }
-            else {
+            if (isAdmin) {
+                document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
+            } else {
                 document.getElementById('passwordInput').value = '';
                 document.getElementById('loginModal').classList.remove('hidden');
                 document.getElementById('passwordInput').focus();
@@ -817,8 +843,10 @@
                 document.getElementById('adminPanel').classList.remove('hidden');
                 document.getElementById('adminWeekToggle').classList.remove('hidden');
                 document.getElementById('adminWeekToggle').classList.add('flex');
+                
                 document.getElementById('authBtn').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
+                
                 closeLoginModal();
                 showToast('Mode Admin Connecté', 'success');
                 renderSchedule(); 
@@ -829,12 +857,14 @@
         window.logout = () => {
             isAdmin = false;
             cancelEdit();
-            switchWeek(0); // Retour à la semaine courante au logout
+            switchWeek(0); // Retour à la semaine courante
+            
             document.getElementById('adminWeekToggle').classList.add('hidden');
             document.getElementById('adminWeekToggle').classList.remove('flex');
             document.getElementById('adminPanel').classList.add('hidden');
             document.getElementById('authBtn').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.add('hidden');
+            
             showToast('Déconnexion', 'info');
             renderSchedule(); 
         };
