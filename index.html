@@ -29,7 +29,7 @@
         @media print {
             @page { size: landscape; margin: 0.5cm; }
             body { background: white; -webkit-print-color-adjust: exact; }
-            header, #adminPanel, #authBtn, #logoutBtn, #toast, #exportPdfBtn, #adminBadge, .no-print, #exportModal, #poster-container { display: none !important; }
+            header, #adminPanel, #authBtn, #logoutBtn, #toast, #exportPdfBtn, #adminBadge, .no-print, #exportModal, #poster-container, #adminWeekToggle, #nextWeekBanner { display: none !important; }
             #scheduleGrid { 
                 display: grid !important; 
                 grid-template-columns: repeat(7, 1fr) !important; 
@@ -50,7 +50,7 @@
             position: fixed;
             left: -9999px;
             top: 0;
-            width: 2000px; /* Très haute résolution */
+            width: 2000px; /* Haute résolution */
             height: 1414px; /* Ratio A4 Paysage */
             background: #ffffff;
             padding: 50px 60px;
@@ -59,6 +59,7 @@
             z-index: -100;
         }
         
+        /* Filigrane Logo */
         .watermark {
             position: absolute;
             bottom: -80px;
@@ -101,14 +102,22 @@
                 </div>
             </div>
 
-            <!-- ONGLETS DE NAVIGATION -->
-            <div class="flex space-x-2 bg-slate-100 p-1 rounded-xl w-full md:w-fit mx-auto no-print">
-                <button onclick="switchUnit('main')" id="tabMain" class="flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700">
-                    <i class="fas fa-users mr-2"></i> Animation
-                </button>
-                <button onclick="switchUnit('pasa')" id="tabPasa" class="flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300">
-                    <i class="fas fa-puzzle-piece mr-2"></i> PASA
-                </button>
+            <!-- ONGLETS & SÉLECTEUR SEMAINE -->
+            <div class="flex flex-col md:flex-row items-center justify-center gap-4 no-print">
+                <div class="flex space-x-2 bg-slate-100 p-1 rounded-xl w-full md:w-fit">
+                    <button onclick="switchUnit('main')" id="tabMain" class="flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700">
+                        <i class="fas fa-users mr-2"></i> Animation
+                    </button>
+                    <button onclick="switchUnit('pasa')" id="tabPasa" class="flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300">
+                        <i class="fas fa-puzzle-piece mr-2"></i> PASA
+                    </button>
+                </div>
+
+                <!-- Toggle Semaine (Visible uniquement Admin) -->
+                <div id="adminWeekToggle" class="hidden space-x-2 bg-slate-200 p-1 rounded-full w-full md:w-fit">
+                    <button onclick="switchWeek(0)" id="btnWeekCurrent" class="flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold bg-slate-800 text-white shadow transition-all">Cette semaine</button>
+                    <button onclick="switchWeek(7)" id="btnWeekNext" class="flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold text-slate-600 bg-white hover:bg-slate-100 transition-all">Semaine prochaine <i class="fas fa-eye-slash ml-1 opacity-50" title="Invisible au public"></i></button>
+                </div>
             </div>
         </div>
     </header>
@@ -121,6 +130,22 @@
 
     <main class="flex-grow container mx-auto px-4 py-8">
         
+        <!-- Bannière d'info Mode Préparation -->
+        <div id="nextWeekBanner" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-5 mb-8 shadow-sm flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-100 text-blue-600 p-3 rounded-full text-2xl">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-blue-800 text-lg">Mode Préparation (Semaine Prochaine)</h3>
+                    <p class="text-blue-600 text-sm">Les visiteurs ne voient pas ce planning. <span class="font-bold">Vous pouvez basculer l'affichage public grâce au bouton ci-contre.</span></p>
+                </div>
+            </div>
+            <button onclick="rolloverWeek()" class="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-2">
+                <i class="fas fa-magic"></i> Rendre public (Basculer)
+            </button>
+        </div>
+
         <!-- Interface Admin -->
         <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10 scroll-mt-64">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
@@ -191,40 +216,31 @@
 
     <!-- GABARIT POSTER (Invisible) -->
     <div id="poster-container">
-        <!-- Filigrane -->
         <i class="fas fa-leaf watermark"></i>
 
-        <!-- Header Poster -->
         <div class="flex items-center justify-between mb-10 relative z-10 w-full" id="posterHeader">
             <div class="flex items-center gap-8">
-                <!-- Logo -->
                 <div id="posterLogo" class="bg-emerald-600 text-white w-32 h-32 flex items-center justify-center rounded-3xl text-6xl shadow-lg border-4 border-white">
                     <i class="fas fa-leaf"></i>
                 </div>
-                
                 <div class="flex flex-col">
                     <h1 class="text-6xl font-serif text-slate-800 font-black tracking-tight leading-tight">EHPAD Claudette Chesne</h1>
-                    <!-- A ne surtout pas SUPPRIMER -->
                     <div class="flex items-center gap-4 mt-2">
-                        <h2 class="text-3xl text-emerald-700 font-sans font-semibold"></h2>
-                        <h2 id="posterSubTitle" class="text-3xl text-emerald-700 font-sans font-semibold"></h2>
+                        <h2 class="text-4xl text-emerald-700 font-sans font-semibold"><span class="font-light tracking-wide">Planning</span> <span id="posterSubTitle">Animation</span></h2>
                     </div>
                 </div>
             </div>
             
-            <!-- Date Box -->
             <div class="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-lg text-right min-w-[350px]">
                 <p class="text-xl text-slate-400 font-bold uppercase tracking-widest mb-1">Semaine du</p>
                 <p id="posterDateRange" class="text-4xl font-bold text-slate-800 font-sans">Lundi au Dimanche</p>
             </div>
         </div>
 
-        <!-- Grid Poster -->
         <div class="grid grid-cols-7 gap-5 flex-grow items-stretch relative z-10 w-full" id="posterGrid">
             <!-- Rempli par JS -->
         </div>
 
-        <!-- Footer Poster -->
         <div class="mt-8 flex justify-between items-center text-slate-500 text-xl border-t border-slate-200 pt-6 relative z-10 font-medium w-full">
             <p><i class="fas fa-info-circle mr-2 text-emerald-500"></i> Les activités sont susceptibles d'être modifiées.</p>
             <p>Document mis à jour le <span id="printDate"></span></p>
@@ -236,35 +252,30 @@
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fade-in-up">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
                 <h3 class="text-2xl font-bold text-slate-800">Options d'impression</h3>
-                <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-600 text-2xl">
-                    &times;
-                </button>
+                <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
             </div>
             
             <div class="space-y-3 mb-6">
-                <!-- 1. AFFICHE -->
                 <button onclick="generateBeautifulPDF()" class="w-full flex items-center gap-4 p-4 border-2 border-emerald-100 bg-emerald-50/50 rounded-xl hover:border-emerald-500 hover:bg-emerald-100 transition group">
                     <div class="bg-emerald-100 text-emerald-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition">
                         <i class="fas fa-image text-2xl"></i>
                     </div>
                     <div class="text-left flex-grow">
-                        <h4 class="font-bold text-slate-800 text-lg">Affiche Murale</h4>
-                        <p class="text-sm text-slate-600">Mise en page "Canva" A4 Paysage</p>
+                        <h4 class="font-bold text-slate-800 text-lg">Affiche Murale <span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-2">Recommandé</span></h4>
+                        <p class="text-sm text-slate-600">Design couleur format A4 Paysage</p>
                     </div>
                 </button>
 
-                <!-- 2. PDF CLASSIQUE -->
                 <button onclick="exportPDF('complete')" class="w-full flex items-center gap-4 p-4 border-2 border-blue-100 bg-blue-50/50 rounded-xl hover:border-blue-500 hover:bg-blue-100 transition group">
                     <div class="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition">
                         <i class="fas fa-file-pdf text-xl"></i>
                     </div>
                     <div class="text-left flex-grow">
                         <h4 class="font-bold text-slate-800">Document PDF Classique</h4>
-                        <p class="text-sm text-slate-600">Texte clair, format standard</p>
+                        <p class="text-sm text-slate-600">Format texte standard</p>
                     </div>
                 </button>
 
-                <!-- 3. COMPACT -->
                 <button onclick="exportPDF('compact')" class="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-slate-500 hover:bg-slate-100 transition group">
                     <div class="bg-slate-100 text-slate-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-slate-200 transition">
                         <i class="fas fa-list text-xl"></i>
@@ -272,6 +283,16 @@
                     <div class="text-left flex-grow">
                         <h4 class="font-bold text-slate-800">Liste Compacte</h4>
                         <p class="text-sm text-slate-600">Économique en encre (N&B)</p>
+                    </div>
+                </button>
+
+                <button onclick="window.print()" class="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-slate-500 hover:bg-slate-100 transition group">
+                    <div class="bg-slate-100 text-slate-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-slate-200 transition">
+                        <i class="fas fa-print text-xl"></i>
+                    </div>
+                    <div class="text-left flex-grow">
+                        <h4 class="font-bold text-slate-800">Impression Directe</h4>
+                        <p class="text-sm text-slate-600">Imprimer la vue écran</p>
                     </div>
                 </button>
             </div>
@@ -295,7 +316,7 @@
     <!-- Configuration Firebase et Logique -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } 
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -311,9 +332,8 @@
         try {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
-            console.log("Firebase connecté");
         } catch (error) {
-            console.error("Erreur:", error);
+            console.error("Erreur Firebase:", error);
             showToast("Erreur Firebase", "error");
         }
 
@@ -342,21 +362,52 @@
             cinema: { icon: 'fa-film', color: 'bg-teal-100 text-teal-700 border-teal-200' },
         };
 
-        // --- GESTION DES UNITÉS ---
-        
+        // --- GESTION ABSOLUE DES SEMAINES ---
+        function getWeekId(offsetDays = 0) {
+            const d = new Date();
+            d.setDate(d.getDate() + offsetDays);
+            const day = d.getDay() === 0 ? 7 : d.getDay();
+            d.setDate(d.getDate() - day + 1); // Lundi
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        let currentWeekId = getWeekId(0); 
+        let nextWeekId = getWeekId(7);    
+        let viewedWeekId = currentWeekId; 
+
+        // Auto-refresh pour écrans allumés en continu
+        setInterval(() => {
+            const newCurrentWeek = getWeekId(0);
+            if (newCurrentWeek !== currentWeekId) location.reload();
+        }, 3600000);
+
+        // --- GESTION DES UNITÉS ET NAVIGATION ---
         window.switchUnit = (unit) => {
             currentUnit = unit;
             updateTheme(unit);
             hasScrolledToToday = false; 
             renderSchedule();
             cancelEdit(); 
-            
             if (isAdmin) {
-                setTimeout(() => {
-                    const adminPanel = document.getElementById('adminPanel');
-                    if (adminPanel) adminPanel.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
+                setTimeout(() => document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' }), 100);
             }
+        };
+
+        window.switchWeek = (offsetDays) => {
+            viewedWeekId = getWeekId(offsetDays);
+            const isCurrent = offsetDays === 0;
+
+            document.getElementById('btnWeekCurrent').className = isCurrent 
+                ? "flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold bg-slate-800 text-white shadow transition-all" 
+                : "flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold text-slate-600 bg-white hover:bg-slate-100 transition-all";
+            
+            document.getElementById('btnWeekNext').className = !isCurrent 
+                ? "flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold bg-blue-600 text-white shadow transition-all" 
+                : "flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold text-slate-600 bg-white hover:bg-slate-100 transition-all";
+            
+            hasScrolledToToday = false;
+            renderSchedule();
+            cancelEdit();
         };
 
         function updateTheme(unit) {
@@ -373,7 +424,7 @@
                 logoBg.classList.remove('bg-amber-100', 'text-amber-600'); logoBg.classList.add('bg-emerald-100', 'text-emerald-600');
                 btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700";
                 btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
-                subTitle.innerText = "Planning Animation";
+                subTitle.innerText = "Planning des activités";
                 if(submitBtn) { submitBtn.className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2"; }
                 if(adminBadge) { adminBadge.className = "bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded"; }
             } else {
@@ -389,33 +440,18 @@
 
         function getWeekDates() {
             const dates = {};
-            const curr = new Date();
-            const dayOfWeek = curr.getDay() === 0 ? 7 : curr.getDay(); 
-            const first = curr.getDate() - dayOfWeek + 1; 
+            const startOfWeek = new Date(viewedWeekId);
             daysOrder.forEach((day, index) => {
-                const next = new Date(curr.setDate(first + index)); 
+                const next = new Date(startOfWeek);
+                next.setDate(startOfWeek.getDate() + index);
                 dates[day] = next.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-                curr.setTime(new Date().getTime()); 
             });
             return dates;
         }
-        
-        function getWeekRange() {
-            const dates = getWeekDates();
-            return `${dates['Lundi']} au ${dates['Dimanche']}`;
-        }
 
-        // --- EXPORT FUNCTIONS ---
-        
-        window.showExportModal = () => {
-            document.getElementById('exportModal').classList.remove('hidden');
-        };
+        window.showExportModal = () => document.getElementById('exportModal').classList.remove('hidden');
+        window.closeExportModal = () => document.getElementById('exportModal').classList.add('hidden');
 
-        window.closeExportModal = () => {
-            document.getElementById('exportModal').classList.add('hidden');
-        };
-
-        // Fonction 1 : Affiche "Poster" (html2canvas) - VERSION DESIGN ++
         window.generateBeautifulPDF = async () => {
             showToast("Génération de l'affiche en cours...", "info");
             document.getElementById('printDate').innerText = new Date().toLocaleDateString('fr-FR');
@@ -423,67 +459,52 @@
             const poster = document.getElementById('poster-container');
             const posterGrid = document.getElementById('posterGrid');
             const weekDates = getWeekDates();
-            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit);
+            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === viewedWeekId);
             
-            // Configuration des couleurs selon l'unité
             const isMain = currentUnit === 'main';
             const mainColorClass = isMain ? 'bg-emerald-600' : 'bg-amber-600';
+            const mainColorText = isMain ? 'text-emerald-700' : 'text-amber-700';
             const logoColorClass = isMain ? 'bg-emerald-600' : 'bg-amber-600';
             const borderColor = isMain ? 'border-emerald-600' : 'border-amber-600';
-            const subTitleColor = isMain ? 'text-emerald-700' : 'text-amber-700';
             
-            // Mise à jour du Header Poster
-            document.getElementById('posterLogo').className = `${logoColorClass} text-white w-32 h-32 flex items-center justify-center rounded-3xl text-6xl shadow-lg border-4 border-white`;
-            document.getElementById('posterHeader').className = `flex items-center justify-between mb-8 pb-6 border-b-4 ${borderColor} relative z-10`;
-            document.getElementById('posterSubTitle').innerText = isMain ? "Planning Animation" : "Planning PASA";
-            document.getElementById('posterSubTitle').className = `text-3xl ${subTitleColor} font-sans font-semibold`;
+            document.getElementById('posterLogo').className = `${logoColorClass} text-white w-32 h-32 flex items-center justify-center rounded-3xl text-6xl shadow-md border-4 border-white`;
+            document.getElementById('posterHeader').className = `flex items-center justify-between mb-8 pb-6 border-b-4 ${borderColor} relative z-10 w-full`;
+            document.getElementById('posterSubTitle').innerText = isMain ? "Animation & Vie Sociale" : "Unité PASA";
+            document.getElementById('posterSubTitle').className = `text-4xl ${mainColorText} font-sans font-semibold`;
             document.getElementById('posterDateRange').innerText = `${weekDates['Lundi']} au ${weekDates['Dimanche']}`;
 
             posterGrid.innerHTML = '';
             
             daysOrder.forEach(day => {
-                const dayActivities = unitActivities
-                    .filter(a => a.day === day)
-                    .sort((a, b) => a.time.localeCompare(b.time));
-                
+                const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
                 let colHtml = `
                     <div class="flex flex-col h-full bg-white rounded-2xl shadow-sm overflow-hidden border-2 border-slate-100">
-                        <!-- En-tête du jour -->
                         <div class="${mainColorClass} text-white p-4 text-center relative overflow-hidden">
                             <h3 class="text-3xl font-bold font-serif relative z-10 capitalize">${day}</h3>
                             <p class="text-xl font-medium opacity-90 relative z-10">${weekDates[day]}</p>
                             <div class="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white opacity-10 rounded-full"></div>
                         </div>
-                        
-                        <!-- Corps du jour -->
                         <div class="p-4 flex-grow space-y-4 bg-slate-50/50">
                 `;
                 
                 if (dayActivities.length === 0) {
-                    colHtml += `
-                        <div class="flex flex-col items-center justify-center h-40 opacity-30 text-slate-400">
-                            <i class="fas fa-bed text-5xl mb-3"></i>
-                            <p class="text-xl font-medium">Repos</p>
-                        </div>`;
+                    colHtml += `<div class="text-center py-10 opacity-40"><i class="fas fa-bed text-5xl mb-3"></i><p class="text-xl font-medium">Repos</p></div>`;
                 } else {
                     dayActivities.forEach(act => {
                         const style = activityTypes[act.type] || activityTypes.social;
-                        // Extraction couleur
-                        const bgClass = style.color.split(' ')[0]; // ex: bg-blue-100
-                        const textClass = style.color.split(' ')[1]; // ex: text-blue-700
-                        // Convertir text-color en border-color (ex: text-blue-700 -> border-blue-700)
+                        const bgClass = style.color.split(' ')[0]; 
+                        const textClass = style.color.split(' ')[1];
                         const borderColorClass = textClass.replace('text-', 'border-');
 
                         colHtml += `
                             <div class="relative bg-white rounded-xl p-3 shadow-sm border border-slate-200 border-l-[8px] ${borderColorClass} flex flex-col gap-1 overflow-hidden group">
                                 <div class="flex justify-between items-start mb-1">
                                     <span class="font-bold text-2xl text-slate-800 font-sans tracking-tight">${act.time}</span>
-                                    <!-- Icône seule -->
-                                    <div class="${textClass} text-2xl">
+                                    <div class="${bgClass.replace('bg-', 'bg-opacity-30 ')} ${textClass} w-10 h-10 rounded-full flex items-center justify-center text-xl">
                                         <i class="fas ${style.icon}"></i>
                                     </div>
                                 </div>
-                                <div>
+                                <div class="pr-2">
                                     <p class="font-bold text-xl text-slate-800 leading-tight mb-1">${act.title}</p>
                                     ${act.desc ? `<p class="text-lg text-slate-500 font-medium leading-snug">${act.desc}</p>` : ''}
                                 </div>
@@ -491,47 +512,41 @@
                         `;
                     });
                 }
-                
                 colHtml += `</div></div>`;
                 posterGrid.innerHTML += colHtml;
             });
 
-            // Capture
             setTimeout(async () => {
                 try {
                     const canvas = await html2canvas(poster, { scale: 1.5, useCORS: true, logging: false });
-                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF('l', 'mm', 'a4');
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = pdf.internal.pageSize.getHeight();
                     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                    pdf.save(`Affiche_${currentUnit}_${new Date().toISOString().split('T')[0]}.pdf`);
+                    
+                    const weekPrefix = viewedWeekId === nextWeekId ? 'Sem_Prochaine_' : '';
+                    pdf.save(`Affiche_${weekPrefix}${currentUnit}_${new Date().toISOString().split('T')[0]}.pdf`);
                     showToast("Affiche téléchargée !", "success");
                     closeExportModal();
-                } catch (err) {
-                    console.error(err);
-                    showToast("Erreur lors de la création", "error");
-                }
+                } catch (err) { showToast("Erreur lors de la création", "error"); }
             }, 800);
         };
 
-        // Fonctions 2 & 3 : PDF Texte (Complet ou Compact)
         window.exportPDF = async (type) => {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const weekDates = getWeekDates();
-            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit);
+            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === viewedWeekId);
             const unitName = currentUnit === 'main' ? 'Animation' : 'PASA';
             
-            // Titre
             pdf.setFontSize(20);
             pdf.setFont(undefined, 'bold');
             pdf.text('EHPAD Claudette Chesne', 105, 20, { align: 'center' });
-            
             pdf.setFontSize(14);
             pdf.setFont(undefined, 'normal');
-            pdf.text(`Planning ${unitName} - Semaine du ${getWeekRange()}`, 105, 30, { align: 'center' });
+            pdf.text(`Planning ${unitName} - Semaine du ${weekDates['Lundi']} au ${weekDates['Dimanche']}`, 105, 30, { align: 'center' });
             
             let yPos = 45;
 
@@ -539,14 +554,12 @@
                 daysOrder.forEach((day) => {
                     const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
                     if (yPos > 250) { pdf.addPage(); yPos = 20; }
-
                     pdf.setFillColor(currentUnit === 'main' ? 16 : 245, currentUnit === 'main' ? 185 : 158, currentUnit === 'main' ? 129 : 11);
                     pdf.rect(15, yPos - 5, 180, 10, 'F');
                     pdf.setTextColor(255, 255, 255);
                     pdf.setFontSize(12);
                     pdf.setFont(undefined, 'bold');
                     pdf.text(`${day} ${weekDates[day]}`, 20, yPos + 2);
-                    
                     yPos += 12;
                     pdf.setTextColor(0, 0, 0);
 
@@ -571,10 +584,8 @@
                 daysOrder.forEach(day => {
                     const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
                     if (yPos > 270) { pdf.addPage(); yPos = 20; }
-
                     pdf.setFont(undefined, 'bold');
                     pdf.text(`${day} ${weekDates[day]}`, 15, yPos); yPos += 5;
-
                     if (dayActivities.length === 0) {
                         pdf.setFont(undefined, 'italic'); pdf.text('- Repos', 20, yPos); yPos += 5;
                     } else {
@@ -587,22 +598,42 @@
                 });
             }
             
-            pdf.save(`Doc_${unitName}_${new Date().toISOString().split('T')[0]}.pdf`);
+            const weekPrefix = viewedWeekId === nextWeekId ? 'Sem_Prochaine_' : '';
+            pdf.save(`Doc_${weekPrefix}${unitName}_${new Date().toISOString().split('T')[0]}.pdf`);
             closeExportModal();
             showToast('Document PDF généré !', 'success');
         };
 
-        // --- FIREBASE LISTEN ---
+        // --- FIREBASE LISTEN (AVEC RÉTROCOMPATIBILITÉ) ---
         if(db) {
             const q = query(collection(db, "activities"));
             onSnapshot(q, (snapshot) => {
                 allActivities = [];
                 snapshot.forEach((doc) => {
-                    allActivities.push({ ...doc.data(), id: doc.id });
+                    const data = doc.data();
+                    // LIGNE MAGIQUE : Appliquer la date de cette semaine aux anciennes activités
+                    if (!data.weekId) { data.weekId = currentWeekId; }
+                    allActivities.push({ ...data, id: doc.id });
                 });
                 renderSchedule();
             });
         }
+
+        // --- BASCULE SEMAINE ---
+        window.rolloverWeek = async () => {
+            if(!confirm("Ceci va basculer le planning préparé en ligne. Continuer ?")) return;
+            showToast("Bascule en cours...", "info");
+            try {
+                const currActs = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === currentWeekId);
+                for(let act of currActs) { await deleteDoc(doc(db, "activities", act.id)); }
+                
+                const nextActs = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === nextWeekId);
+                for(let act of nextActs) { await updateDoc(doc(db, "activities", act.id), { weekId: currentWeekId }); }
+                
+                showToast("Semaine basculée !", "success");
+                switchWeek(0); 
+            } catch(e) { showToast("Erreur lors de la bascule", "error"); }
+        };
 
         // --- DRAG AND DROP ---
         window.drag = (ev, id) => {
@@ -629,7 +660,7 @@
                 try {
                     await updateDoc(doc(db, "activities", activityId), { day: newDay });
                     showToast(`Déplacé vers ${newDay}`, 'success');
-                } catch (e) { showToast("Erreur déplacement", "error"); }
+                } catch (e) { showToast("Erreur", "error"); }
             }
         }
 
@@ -643,7 +674,9 @@
                 type: document.getElementById('inputType').value,
                 title: document.getElementById('inputTitle').value,
                 desc: document.getElementById('inputDesc').value,
-                unit: currentUnit, createdAt: Date.now()
+                unit: currentUnit,
+                weekId: viewedWeekId, 
+                createdAt: Date.now()
             };
             try {
                 if (editingId) {
@@ -693,18 +726,26 @@
             }
         }
 
+        // --- RENDER ---
         function renderSchedule() {
             const grid = document.getElementById('scheduleGrid');
             grid.innerHTML = '';
             const weekDates = getWeekDates();
-            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit);
+            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === viewedWeekId);
+
+            const nextWeekBanner = document.getElementById('nextWeekBanner');
+            if (viewedWeekId === nextWeekId && isAdmin) {
+                nextWeekBanner.classList.remove('hidden'); nextWeekBanner.classList.add('flex');
+            } else {
+                nextWeekBanner.classList.add('hidden'); nextWeekBanner.classList.remove('flex');
+            }
 
             daysOrder.forEach(day => {
                 const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
                 const dayColumn = document.createElement('div');
-                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-44';
+                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-64';
                 
-                const isToday = new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
+                const isToday = viewedWeekId === currentWeekId && new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
                 if (isToday) dayColumn.id = 'today-column';
                 const headerClass = isToday ? (currentUnit === 'main' ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white') : 'bg-slate-100 text-slate-700';
                 
@@ -712,7 +753,7 @@
                     <div class="${headerClass} p-4 border-b border-slate-200">
                         <h3 class="text-xl font-bold capitalize flex justify-between items-center">
                             <span>${day} <span class="font-sans text-lg font-medium opacity-90 ml-1">${weekDates[day]}</span></span>
-                            ${isToday ? `<span class="text-xs bg-white ${currentUnit === 'main' ? 'text-emerald-600' : 'text-amber-600'} px-2 py-1 rounded-full uppercase">Aujourd\'hui</span>` : ''}
+                            ${isToday ? `<span class="text-xs bg-white ${currentUnit === 'main' ? 'text-emerald-600' : 'text-amber-600'} px-2 py-1 rounded-full uppercase">Aujourd'hui</span>` : ''}
                         </h3>
                     </div>
                     <div class="p-4 space-y-4 flex-grow bg-slate-50/50" ondrop="drop(event, '${day}')" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)">
@@ -752,7 +793,7 @@
                 grid.appendChild(dayColumn);
             });
 
-            if (!hasScrolledToToday && !isAdmin) {
+            if (!hasScrolledToToday && !isAdmin && viewedWeekId === currentWeekId) {
                 setTimeout(() => {
                     const todayElement = document.getElementById('today-column');
                     if (todayElement) todayElement.scrollIntoView({ behavior: 'smooth' });
@@ -763,23 +804,28 @@
 
         // --- AUTH ---
         window.toggleAdminPanel = () => {
-            if (isAdmin) document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
+            if (isAdmin) { document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' }); }
             else {
                 document.getElementById('passwordInput').value = '';
                 document.getElementById('loginModal').classList.remove('hidden');
                 document.getElementById('passwordInput').focus();
             }
         };
+
         window.closeLoginModal = () => document.getElementById('loginModal').classList.add('hidden');
+
         window.handleLogin = async (e) => {
             e.preventDefault();
             const passInput = document.getElementById('passwordInput').value;
             const msgBuffer = new TextEncoder().encode(passInput);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
             const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+            
             if (hashHex === PASSWORD_HASH) {
                 isAdmin = true;
                 document.getElementById('adminPanel').classList.remove('hidden');
+                document.getElementById('adminWeekToggle').classList.remove('hidden');
+                document.getElementById('adminWeekToggle').classList.add('flex');
                 document.getElementById('authBtn').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
                 closeLoginModal();
@@ -788,15 +834,20 @@
                 setTimeout(() => document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' }), 300);
             } else { showToast('Mot de passe incorrect', 'error'); }
         };
+
         window.logout = () => {
             isAdmin = false;
             cancelEdit();
+            switchWeek(0); // Retour à la semaine courante au logout
+            document.getElementById('adminWeekToggle').classList.add('hidden');
+            document.getElementById('adminWeekToggle').classList.remove('flex');
             document.getElementById('adminPanel').classList.add('hidden');
             document.getElementById('authBtn').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.add('hidden');
             showToast('Déconnexion', 'info');
             renderSchedule(); 
         };
+
         window.showToast = (message, type = 'info') => {
             const toast = document.getElementById('toast');
             document.getElementById('toastMessage').innerText = message;
