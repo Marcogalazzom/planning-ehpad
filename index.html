@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
     
-    <!-- Librairies Export PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -74,7 +73,6 @@
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col transition-colors duration-500" id="mainBody">
 
-    <!-- En-tête -->
     <header id="mainHeader" class="bg-white shadow-md sticky top-0 z-50 border-b-4 border-emerald-500 transition-colors duration-500">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-4">
@@ -102,7 +100,6 @@
                 </div>
             </div>
 
-            <!-- ONGLETS & SÉLECTEUR SEMAINE -->
             <div class="flex flex-col md:flex-row items-center justify-center gap-4 no-print">
                 <div class="flex space-x-2 bg-slate-100 p-1 rounded-xl w-full md:w-fit">
                     <button onclick="switchUnit('main')" id="tabMain" class="flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow bg-white text-emerald-700">
@@ -113,7 +110,6 @@
                     </button>
                 </div>
 
-                <!-- Toggle Semaine (Visible uniquement Admin) -->
                 <div id="adminWeekToggle" class="hidden space-x-2 bg-slate-200 p-1 rounded-full w-full md:w-fit">
                     <button onclick="switchWeek(0)" id="btnWeekCurrent" class="flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold bg-slate-800 text-white shadow transition-all">Cette semaine</button>
                     <button onclick="switchWeek(7)" id="btnWeekNext" class="flex-1 md:flex-none px-5 py-1.5 rounded-full text-sm font-bold text-slate-600 bg-white hover:bg-slate-100 transition-all">Semaine prochaine <i class="fas fa-eye-slash ml-1 opacity-50" title="Invisible au public"></i></button>
@@ -122,7 +118,6 @@
         </div>
     </header>
 
-    <!-- Toast -->
     <div id="toast" class="fixed top-24 right-5 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-xl transform translate-x-full transition-transform duration-300 z-50 flex items-center gap-3">
         <i class="fas fa-info-circle text-emerald-400"></i>
         <span id="toastMessage">Message</span>
@@ -130,7 +125,6 @@
 
     <main class="flex-grow container mx-auto px-4 py-8">
         
-        <!-- Bannière d'info Mode Préparation -->
         <div id="nextWeekBanner" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-5 mb-8 shadow-sm flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
                 <div class="bg-blue-100 text-blue-600 p-3 rounded-full text-2xl">
@@ -146,7 +140,6 @@
             </button>
         </div>
 
-        <!-- Interface Admin -->
         <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10 scroll-mt-64">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
                 <h3 id="formTitle" class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-edit"></i> Ajouter une activité</h3>
@@ -195,6 +188,14 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
                     <input type="text" id="inputDesc" placeholder="Lieu..." class="w-full p-2 border border-slate-300 rounded-lg">
                 </div>
+                
+                <div class="lg:col-span-5 flex items-center gap-2 mt-2">
+                    <input type="checkbox" id="inputRecurring" class="w-5 h-5 text-emerald-600 rounded border-slate-300 cursor-pointer">
+                    <label for="inputRecurring" class="text-sm font-medium text-slate-700 cursor-pointer flex items-center gap-2">
+                        <i class="fas fa-sync-alt text-emerald-500"></i> Activité récurrente (apparaît toutes les semaines)
+                    </label>
+                </div>
+
                 <div class="lg:col-span-5 flex justify-end gap-3">
                     <button type="button" id="cancelBtn" onclick="cancelEdit()" class="hidden bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold py-2 px-6 rounded-lg transition">
                         Annuler
@@ -214,7 +215,6 @@
         </div>
     </main>
 
-    <!-- GABARIT POSTER (Invisible) -->
     <div id="poster-container">
         <i class="fas fa-leaf watermark"></i>
 
@@ -238,8 +238,7 @@
         </div>
 
         <div class="grid grid-cols-7 gap-5 flex-grow items-stretch relative z-10 w-full" id="posterGrid">
-            <!-- Rempli par JS -->
-        </div>
+            </div>
 
         <div class="mt-8 flex justify-between items-center text-slate-500 text-xl border-t border-slate-200 pt-6 relative z-10 font-medium w-full">
             <p><i class="fas fa-info-circle mr-2 text-emerald-500"></i> Les activités sont susceptibles d'être modifiées.</p>
@@ -247,7 +246,6 @@
         </div>
     </div>
 
-    <!-- MODAL D'EXPORTATION -->
     <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fade-in-up max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6 border-b pb-4 sticky top-0 bg-white z-10">
@@ -256,7 +254,6 @@
             </div>
             
             <div class="space-y-3 mb-2">
-                <!-- 1. AFFICHE 7 JOURS -->
                 <button onclick="generateBeautifulPDF('full')" class="w-full flex items-center gap-4 p-4 border-2 border-emerald-100 bg-emerald-50/50 rounded-xl hover:border-emerald-500 hover:bg-emerald-100 transition group">
                     <div class="bg-emerald-100 text-emerald-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition">
                         <i class="fas fa-calendar-week text-2xl"></i>
@@ -267,7 +264,6 @@
                     </div>
                 </button>
 
-                <!-- 2. AFFICHE 5 JOURS -->
                 <button onclick="generateBeautifulPDF('weekday')" class="w-full flex items-center gap-4 p-4 border-2 border-teal-100 bg-teal-50/50 rounded-xl hover:border-teal-500 hover:bg-teal-100 transition group">
                     <div class="bg-teal-100 text-teal-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-teal-200 transition">
                         <i class="fas fa-calendar-day text-2xl"></i>
@@ -278,7 +274,6 @@
                     </div>
                 </button>
 
-                <!-- 3. PDF CLASSIQUE -->
                 <button onclick="exportPDF('complete')" class="w-full flex items-center gap-4 p-4 border-2 border-blue-100 bg-blue-50/50 rounded-xl hover:border-blue-500 hover:bg-blue-100 transition group">
                     <div class="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition">
                         <i class="fas fa-file-pdf text-xl"></i>
@@ -289,7 +284,6 @@
                     </div>
                 </button>
 
-                <!-- 4. COMPACT -->
                 <button onclick="exportPDF('compact')" class="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-slate-500 hover:bg-slate-100 transition group">
                     <div class="bg-slate-100 text-slate-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-slate-200 transition">
                         <i class="fas fa-list text-xl"></i>
@@ -304,7 +298,6 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4">
             <h3 class="text-2xl font-bold text-center mb-4">Admin</h3>
@@ -318,7 +311,6 @@
         </div>
     </div>
 
-    <!-- Configuration Firebase et Logique -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } 
@@ -377,7 +369,7 @@
         }
 
         let currentWeekId = getWeekId(0); 
-        let nextWeekId = getWeekId(7);    
+        let nextWeekId = getWeekId(7);   
         let viewedWeekId = currentWeekId; 
 
         setInterval(() => {
@@ -464,7 +456,8 @@
             const poster = document.getElementById('poster-container');
             const posterGrid = document.getElementById('posterGrid');
             const weekDates = getWeekDates();
-            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === viewedWeekId);
+            // MODIFICATION ICI POUR INCLURE LES RÉCURRENTES
+            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && (a.weekId === viewedWeekId || a.isRecurring));
             
             const isMain = currentUnit === 'main';
             const mainColorClass = isMain ? 'bg-emerald-600' : 'bg-amber-600';
@@ -555,7 +548,8 @@
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const weekDates = getWeekDates();
-            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === viewedWeekId);
+            // MODIFICATION ICI POUR INCLURE LES RÉCURRENTES
+            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && (a.weekId === viewedWeekId || a.isRecurring));
             const unitName = currentUnit === 'main' ? 'Animation' : 'PASA';
             
             pdf.setFontSize(20);
@@ -640,10 +634,11 @@
             if(!confirm("Ceci va basculer le planning préparé en ligne. Continuer ?")) return;
             showToast("Bascule en cours...", "info");
             try {
-                const currActs = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === currentWeekId);
+                // MODIFICATION ICI POUR PROTÉGER LES RÉCURRENTES (!a.isRecurring)
+                const currActs = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === currentWeekId && !a.isRecurring);
                 for(let act of currActs) { await deleteDoc(doc(db, "activities", act.id)); }
                 
-                const nextActs = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === nextWeekId);
+                const nextActs = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === nextWeekId && !a.isRecurring);
                 for(let act of nextActs) { await updateDoc(doc(db, "activities", act.id), { weekId: currentWeekId }); }
                 
                 showToast("Semaine basculée !", "success");
@@ -684,6 +679,7 @@
         document.getElementById('addActivityForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if(!db) return;
+            // MODIFICATION ICI POUR ENREGISTRER L'ÉTAT RÉCURRENT
             const newActivity = {
                 day: document.getElementById('inputDay').value,
                 time: document.getElementById('inputTime').value,
@@ -692,6 +688,7 @@
                 desc: document.getElementById('inputDesc').value,
                 unit: currentUnit,
                 weekId: viewedWeekId, 
+                isRecurring: document.getElementById('inputRecurring').checked, // <-- AJOUT
                 createdAt: Date.now()
             };
             try {
@@ -714,6 +711,9 @@
             document.getElementById('inputType').value = activity.type;
             document.getElementById('inputTitle').value = activity.title;
             document.getElementById('inputDesc').value = activity.desc || '';
+            // MODIFICATION ICI POUR COCHER LA CASE SI RÉCURRENTE
+            document.getElementById('inputRecurring').checked = activity.isRecurring || false;
+            
             editingId = id;
             document.getElementById('formTitle').innerHTML = '<i class="fas fa-pen"></i> Modifier';
             document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> <span>Modifier</span>';
@@ -725,6 +725,9 @@
         window.cancelEdit = () => {
             editingId = null;
             document.getElementById('addActivityForm').reset();
+            // Sécurité : forcer la case à se décocher
+            document.getElementById('inputRecurring').checked = false; 
+            
             document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit"></i> Ajouter';
             const btnColor = currentUnit === 'main' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700';
             document.getElementById('submitBtn').innerHTML = '<i class="fas fa-plus-circle"></i> <span>Ajouter</span>';
@@ -747,7 +750,8 @@
             const grid = document.getElementById('scheduleGrid');
             grid.innerHTML = '';
             const weekDates = getWeekDates();
-            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && a.weekId === viewedWeekId);
+            // MODIFICATION ICI POUR AFFICHER LES RÉCURRENTES
+            const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && (a.weekId === viewedWeekId || a.isRecurring));
 
             const nextWeekBanner = document.getElementById('nextWeekBanner');
             if (viewedWeekId === nextWeekId && isAdmin) {
@@ -788,6 +792,7 @@
                         const draggableAttr = isAdmin ? `draggable="true" ondragstart="drag(event, '${act.id}')"` : '';
                         const cursorClass = isAdmin ? 'cursor-grab active:cursor-grabbing' : '';
 
+                        // MODIFICATION ICI POUR L'ICÔNE RÉCURRENTE
                         html += `
                             <div class="activity-card relative bg-white border-l-4 ${style.color.split(' ')[2]} rounded-r-lg shadow-sm p-3 flex gap-3 items-start ${cursorClass}" ${draggableAttr}>
                                 <div class="${style.color.split(' ')[0]} ${style.color.split(' ')[1]} w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1 pointer-events-none">
@@ -795,7 +800,10 @@
                                 </div>
                                 <div class="flex-grow pointer-events-none">
                                     <div class="flex justify-between items-start pointer-events-auto">
-                                        <span class="font-bold text-slate-800 text-lg">${act.time}</span>
+                                        <span class="font-bold text-slate-800 text-lg">
+                                            ${act.time} 
+                                            ${act.isRecurring ? `<i class="fas fa-sync-alt text-emerald-500 ml-2 text-sm" title="Activité récurrente"></i>` : ''}
+                                        </span>
                                         ${adminActions}
                                     </div>
                                     <h4 class="font-bold text-slate-700 leading-tight">${act.title}</h4>
