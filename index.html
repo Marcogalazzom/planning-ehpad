@@ -275,7 +275,7 @@
                     <i class="fas fa-spinner fa-spin text-2xl text-indigo-600"></i>
                     <div>
                         <p class="font-bold text-indigo-800 text-sm">L'IA de Gemini analyse votre fichier...</p>
-                        <p class="text-xs text-indigo-600 mt-1">Extraction intelligente des lieux, horaires et unités en cours.</p>
+                        <p class="text-xs text-indigo-600 mt-1">Lecture exhaustive de toutes les pages en cours.</p>
                     </div>
                 </div>
             </div>
@@ -876,7 +876,7 @@
             }
         };
 
-        // --- IMPORT IA (NETSOINS) AMÉLIORÉ AVEC JAVASCRIPT CLEANER ---
+        // --- IMPORT IA (NETSOINS) AMÉLIORÉ AVEC LECTURE EXHAUSTIVE ---
         async function fetchWithRetry(url, options, maxRetries = 5) {
             const delays = [1000, 2000, 4000, 8000, 16000];
             for (let i = 0; i < maxRetries; i++) {
@@ -956,16 +956,20 @@
         async function processImageWithAI(base64Data, mimeType, apiKey) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
-            const prompt = `Tu es un expert en extraction de données. Analyse ce document PDF ou image d'un planning NetSoins.
-Chaque ligne correspond à une activité. Les colonnes sont généralement : Activité, Heure, Matériel, Intervenants, Lieu, Inscrits.
+            const prompt = `Tu es un expert en extraction de données. Analyse L'INTÉGRALITÉ de ce document PDF ou image d'un planning NetSoins.
+Il y a plusieurs pages, parcours-les TOUTES de la première à la dernière ligne. Tu DOIS extraire TOUTES les activités sans AUCUNE exception (il y en a souvent entre 15 et 30 au total).
 
-Pour CHAQUE activité trouvée, tu dois fournir un objet JSON. Ne manque aucune activité.
+Attention aux sauts de page et aux erreurs de formatage du PDF :
+- Parfois, un titre est sur plusieurs lignes. Assemble-le.
+- Parfois, l'heure est collée dans le titre (ex: "Repas therapeutique PASA 12h00"). Sépare l'heure et retire-la du titre.
+
+Pour CHAQUE activité trouvée, tu dois fournir un objet JSON. 
 
 Règles d'extraction brutes (le nettoyage se fera par le code) :
 1. JOUR ('day') : Identifie le jour de la semaine (ex: Lundi, Mardi...).
-2. HEURE ('time') : Extraire l'heure et la convertir au format HH:MM.
-3. TITRE ('title') : Le titre complet de l'activité (retire simplement les compteurs "0/10").
-4. LIEU ('rawLocation') : Copie EXACTEMENT le texte de la colonne "Lieu" de cette ligne sans RIEN modifier. S'il n'y a rien dans la colonne Lieu, laisse vide "".
+2. HEURE ('time') : Extraire l'heure et la convertir au format HH:MM (ex: 12h00 -> 12:00).
+3. TITRE ('title') : Le nom de l'activité. Retire l'heure si elle est collée dedans, et retire les compteurs "0/10".
+4. LIEU ('rawLocation') : Copie EXACTEMENT le texte de la colonne "Lieu" de cette ligne sans RIEN modifier. S'il n'y a rien, laisse vide "".
 5. TYPE ('type') : Analyse le sens et assigne : sport, cognitive, creative, music, food, social, outing, festive, sensory, animal, religious, ou cinema.
 `;
 
@@ -1047,7 +1051,9 @@ Règles d'extraction brutes (le nettoyage se fera par le code) :
                     finalUnit = "pasa";
                 }
                 
-                finalTitle = finalTitle.replace(/\s*au PASA\b/gi, '')
+                // Retire les sauts de lignes accidentels dans le titre, les mots indésirables, etc.
+                finalTitle = finalTitle.replace(/[\r\n]+/g, ' ') 
+                                       .replace(/\s*au PASA\b/gi, '')
                                        .replace(/\s*du PASA\b/gi, '')
                                        .replace(/\bPASA\b/gi, '')
                                        .replace(/salle\s*[àa]?\s*manger/gi, '')
@@ -1076,7 +1082,7 @@ Règles d'extraction brutes (le nettoyage se fera par le code) :
                 else if (searchString.includes("jour")) { finalDesc = "RDC"; }
                 else {
                     // Si on n'a détecté aucun de ces étages, on nettoie quand même pour être sûr.
-                    finalDesc = finalDesc.replace(/salle\s*[àa]?\s*manger/gi, '').trim();
+                    finalDesc = finalDesc.replace(/[\r\n]+/g, ' ').replace(/salle\s*[àa]?\s*manger/gi, '').trim();
                 }
 
                 const newActivity = {
