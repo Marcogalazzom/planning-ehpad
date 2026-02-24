@@ -965,7 +965,7 @@ Règles d'extraction brutes (le nettoyage se fera par le code) :
 1. JOUR ('day') : Identifie le jour de la semaine (ex: Lundi, Mardi...).
 2. HEURE ('time') : Extraire l'heure et la convertir au format HH:MM.
 3. TITRE ('title') : Le titre complet de l'activité (retire simplement les compteurs "0/10").
-4. LIEU ('rawLocation') : Copie EXACTEMENT le texte de la colonne "Lieu" de cette ligne (ex: "LIEU DE VIE ST HILAIRE", "SALLE A MANGER N2"). S'il n'y a rien dans la colonne Lieu, laisse vide "".
+4. LIEU ('rawLocation') : Copie EXACTEMENT le texte de la colonne "Lieu" de cette ligne sans RIEN modifier. S'il n'y a rien dans la colonne Lieu, laisse vide "".
 5. TYPE ('type') : Analyse le sens et assigne : sport, cognitive, creative, music, food, social, outing, festive, sensory, animal, religious, ou cinema.
 `;
 
@@ -1039,7 +1039,7 @@ Règles d'extraction brutes (le nettoyage se fera par le code) :
                 let safeDay = act.day ? (act.day.charAt(0).toUpperCase() + act.day.slice(1).toLowerCase()) : "Lundi";
                 if (!validDays.includes(safeDay)) safeDay = "Lundi"; 
                 
-                // 2. NETTOYAGE STRICT DU TITRE ET DÉTECTION PASA (JAVASCRIPT)
+                // 2. NETTOYAGE ULTRA STRICT DU TITRE ET DÉTECTION PASA (JAVASCRIPT)
                 let finalTitle = act.title || "";
                 let finalUnit = "main";
                 
@@ -1047,33 +1047,36 @@ Règles d'extraction brutes (le nettoyage se fera par le code) :
                     finalUnit = "pasa";
                 }
                 
-                // Suppression de mots indésirables du titre
                 finalTitle = finalTitle.replace(/\s*au PASA\b/gi, '')
                                        .replace(/\s*du PASA\b/gi, '')
-                                       .replace(/\s*PASA\b/gi, '')
-                                       .replace(/salle\s*à\s*manger/gi, '')
-                                       .replace(/salle\s*a\s*manger/gi, '')
-                                       .replace(/\bN1\b/gi, '')
-                                       .replace(/\bN2\b/gi, '')
+                                       .replace(/\bPASA\b/gi, '')
+                                       .replace(/salle\s*[àa]?\s*manger/gi, '')
+                                       .replace(/\b[ée]tage\s*1\b/gi, '')
+                                       .replace(/\b[ée]tage\s*2\b/gi, '')
+                                       .replace(/\bn\s*°?\s*1\b/gi, '')
+                                       .replace(/\bn\s*°?\s*2\b/gi, '')
+                                       .replace(/bastille/gi, '')
+                                       .replace(/st\s*hilaire/gi, '')
+                                       .replace(/saint\s*hilaire/gi, '')
+                                       .replace(/lieu\s*de\s*vie/gi, '')
                                        .replace(/\s*-\s*$/g, '') 
+                                       .replace(/^\s*-\s*/g, '')
+                                       .replace(/\s+/g, ' ')
                                        .trim();
                 
-                // 3. REMPLACEMENT STRICT DES LIEUX (JAVASCRIPT)
+                // 3. REMPLACEMENT COMPLET ET STRICT DES LIEUX (JAVASCRIPT)
                 let finalDesc = act.rawLocation || "";
-                let loc = (act.rawLocation || "").toLowerCase();
-                let titleSearch = (act.title || "").toLowerCase(); 
+                let searchString = (finalDesc + " " + (act.title || "")).toLowerCase();
                 
-                const searchString = loc + " " + titleSearch;
-                
-                // On remplace complètement la description par un lieu court et lisible
+                // Si la condition de N1 ou N2 est remplie, finalDesc EST complètement remplacé par "Étage 1" ou "Étage 2"
                 if (searchString.includes("bastille")) { finalDesc = "UPG Bastille"; }
                 else if (searchString.includes("hilaire")) { finalDesc = "UPG Saint-Hilaire"; }
-                else if (searchString.includes("n1") || searchString.includes("étage 1") || searchString.includes("etage 1")) { finalDesc = "Étage 1"; }
-                else if (searchString.includes("n2") || searchString.includes("étage 2") || searchString.includes("etage 2")) { finalDesc = "Étage 2"; }
+                else if (searchString.match(/\bn\s*°?\s*1\b/i) || searchString.match(/\b[ée]tage\s*1\b/i)) { finalDesc = "Étage 1"; }
+                else if (searchString.match(/\bn\s*°?\s*2\b/i) || searchString.match(/\b[ée]tage\s*2\b/i)) { finalDesc = "Étage 2"; }
                 else if (searchString.includes("jour")) { finalDesc = "RDC"; }
                 else {
-                    // S'il n'y a pas N1 ou N2 de précisé, on efface juste le terme "salle à manger" pour faire plus propre
-                    finalDesc = finalDesc.replace(/salle\s*à\s*manger/gi, '').replace(/salle\s*a\s*manger/gi, '').trim();
+                    // Si on n'a détecté aucun de ces étages, on nettoie quand même pour être sûr.
+                    finalDesc = finalDesc.replace(/salle\s*[àa]?\s*manger/gi, '').trim();
                 }
 
                 const newActivity = {
