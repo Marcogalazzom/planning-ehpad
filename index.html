@@ -261,10 +261,10 @@
                     <label for="netsoinsImage" class="flex flex-col items-center justify-center w-full h-32 border-2 border-indigo-200 border-dashed rounded-xl cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400 transition-all relative overflow-hidden group">
                         <div class="flex flex-col items-center justify-center pt-5 pb-6 z-10">
                             <i class="fas fa-cloud-upload-alt text-3xl text-indigo-400 mb-2 group-hover:text-indigo-600 transition-colors"></i>
-                            <p class="mb-2 text-sm text-slate-600"><span class="font-semibold text-indigo-600">Cliquez pour importer</span> ou glissez une image</p>
-                            <p class="text-xs text-slate-500">PNG, JPG</p>
+                            <p class="mb-2 text-sm text-slate-600"><span class="font-semibold text-indigo-600">Cliquez pour importer</span> ou glissez un fichier</p>
+                            <p class="text-xs text-slate-500">PDF, PNG, JPG</p>
                         </div>
-                        <input id="netsoinsImage" type="file" class="hidden" accept="image/png, image/jpeg" />
+                        <input id="netsoinsImage" type="file" class="hidden" accept="image/png, image/jpeg, application/pdf" />
                         
                         <!-- Image Preview -->
                         <img id="imagePreview" class="absolute inset-0 w-full h-full object-cover hidden opacity-30 grayscale" />
@@ -920,7 +920,18 @@
             
             reader.onload = async (event) => {
                 const dataUrl = event.target.result;
-                imgPreview.src = dataUrl;
+                
+                // Si c'est un PDF, on affiche un visuel différent de l'image
+                if (file.type === "application/pdf") {
+                    imgPreview.src = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23e0e7ff'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='20' font-weight='bold' fill='%234f46e5' text-anchor='middle' dy='.3em'%3EDocument PDF%3C/text%3E%3C/svg%3E";
+                    imgPreview.classList.remove('grayscale', 'opacity-30');
+                    imgPreview.classList.add('opacity-80');
+                } else {
+                    imgPreview.src = dataUrl;
+                    imgPreview.classList.remove('opacity-80');
+                    imgPreview.classList.add('grayscale', 'opacity-30');
+                }
+
                 imgPreview.classList.remove('hidden');
                 scanOverlay.classList.remove('hidden');
                 loader.classList.remove('hidden');
@@ -947,18 +958,27 @@
         async function processImageWithAI(base64Data, mimeType, apiKey) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
-            const prompt = `Tu es un expert en extraction de données. Analyse attentivement cette capture d'écran d'un planning NetSoins.
+            const prompt = `Tu es un expert en extraction de données. Analyse attentivement ce document (image ou PDF) d'un planning NetSoins.
 Extraire TOUTES les activités (il y en a souvent 3 à 5 par jour).
 
 Pour CHAQUE activité trouvée, tu dois fournir un objet JSON.
 
 Règles de lecture (TRÈS IMPORTANT) :
-1. JOUR ('day') : Identifie le jour selon la position de la colonne de gauche à droite. La 1ère colonne visible à gauche est TOUJOURS "Lundi", la 2ème "Mardi", la 3ème "Mercredi", la 4ème "Jeudi", la 5ème "Vendredi", la 6ème "Samedi", la 7ème "Dimanche".
-2. HEURE ('time') : Extraire l'heure (ex: 10h30, 14h29) et la convertir STRICTEMENT au format HH:MM. Arrondis à la demi-heure ou heure pile la plus proche (ex: 10h29 -> 10:30, 14h59 -> 15:00).
-3. TITRE ('title') : Retire les compteurs de places du type "0/10", "2/2", "0/0", "0/76", "0/12", "0/34", "0/5" situés après l'heure. Ne garde que le texte propre de l'activité (ex: "Atelier créatif PASA", "cuisine PASA", "Volley-ball", "rencontres et papotage").
-4. ACTIVITÉS ANNULÉES : Si le texte d'une activité est BARRÉ / RAYÉ (une ligne horizontale le traverse, ex: "revue de presse" barré), tu DOIS L'IGNORER complètement.
-5. UNITÉ ('unit') : Renvoie "pasa" si le titre contient le mot "PASA" ou "pasa", sinon renvoie "main".
-6. TYPE ('type') : Analyse le sens du titre et assigne l'une de ces catégories exactes : sport, cognitive, creative, music, food, social, outing, festive, sensory, animal, religious, cinema. Exemples de logique : Volley/Gym/Yoga -> sport, Repas/Cuisine -> food, Messe -> religious, Loto/jeux/Lecture -> cognitive, Tricot/Peinture -> creative, Chansons/Chant -> music, rencontres/papote -> social, fête/anniversaire -> festive.
+1. JOUR ('day') : Identifie le jour de la semaine. Formats acceptés: Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, Dimanche.
+2. HEURE ('time') : Extraire l'heure (ex: 10h30) et la convertir STRICTEMENT au format HH:MM. Arrondir à la demi-heure la plus proche (ex: 10h29 -> 10:30).
+3. UNITÉ ('unit') : Renvoie "pasa" si le titre original contient le mot "PASA" ou "pasa" (même en majuscule ou minuscule). Sinon, renvoie "main".
+4. TITRE ('title') : 
+   - Retire les compteurs de places (ex: "0/10", "2/2").
+   - RETIRE TOTALEMENT le mot "PASA" ou "pasa" (ainsi que les prépositions comme "au PASA", "du PASA") du titre final. Exemple : "Atelier créatif PASA" doit devenir simplement "Atelier créatif". "jeux au PASA" doit devenir "jeux".
+5. LIEU / DESCRIPTION ('desc') : Extrait le lieu indiqué pour l'activité. Tu DOIS appliquer STRICTEMENT ces remplacements :
+   - Si tu trouves "Lieu de vie Bastille", écris "UPG Bastille"
+   - Si tu trouves "Lieu de vie Saint-Hilaire", écris "UPG Saint-Hilaire"
+   - Si tu trouves "N1", écris "Étage 1"
+   - Si tu trouves "N2", écris "Étage 2"
+   - Si tu trouves "Salle du Jour", écris "RDC"
+   S'il n'y a pas de lieu précis indiqué, laisse le champ vide ("").
+6. TYPE ('type') : Analyse le sens du titre et assigne l'une de ces catégories exactes : sport, cognitive, creative, music, food, social, outing, festive, sensory, animal, religious, cinema. Ex: Gym->sport, Cuisine->food, Loto->cognitive, Tricot->creative, Chant->music.
+7. ACTIVITÉS ANNULÉES : Si le texte d'une activité est BARRÉ / RAYÉ, tu DOIS L'IGNORER complètement.
 `;
 
             const payload = {
@@ -981,11 +1001,12 @@ Règles de lecture (TRÈS IMPORTANT) :
                                     properties: {
                                         day: { type: "STRING", description: "Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, ou Dimanche" },
                                         time: { type: "STRING", description: "Format HH:MM" },
-                                        title: { type: "STRING", description: "Titre sans les nombres de participation" },
+                                        title: { type: "STRING", description: "Titre SANS le mot PASA et SANS les nombres de participation" },
                                         unit: { type: "STRING", description: "pasa ou main" },
-                                        type: { type: "STRING", description: "Catégorie en minuscules (ex: sport, food, cognitive...)" }
+                                        type: { type: "STRING", description: "Catégorie en minuscules (ex: sport, food, cognitive...)" },
+                                        desc: { type: "STRING", description: "Le lieu modifié selon les règles (ex: UPG Bastille, Étage 1...) ou vide" }
                                     },
-                                    required: ["day", "time", "title", "unit", "type"]
+                                    required: ["day", "time", "title", "unit", "type", "desc"]
                                 }
                             }
                         },
@@ -1037,7 +1058,7 @@ Règles de lecture (TRÈS IMPORTANT) :
                     time: act.time,
                     type: act.type || 'social',
                     title: act.title,
-                    desc: "",
+                    desc: act.desc || "",
                     unit: act.unit === 'pasa' ? 'pasa' : 'main',
                     weekId: viewedWeekId, 
                     isRecurring: false,
