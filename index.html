@@ -168,7 +168,13 @@
         <div id="adminPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-lg p-6 mb-10 scroll-mt-64">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
                 <h3 id="formTitle" class="text-xl font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-edit"></i> Ajouter une activité</h3>
-                <span id="adminBadge" class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded">Mode Édition</span>
+                <div class="flex items-center gap-2 md:gap-4">
+                    <!-- NOUVEAU: Bouton pour vider toute la semaine -->
+                    <button onclick="clearWeek()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold transition flex items-center gap-2 shadow-sm" title="Vider toute la semaine">
+                        <i class="fas fa-trash-alt"></i> <span class="hidden md:inline">Vider la semaine</span>
+                    </button>
+                    <span id="adminBadge" class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded">Mode Édition</span>
+                </div>
             </div>
             
             <form id="addActivityForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -194,6 +200,8 @@
                         <option value="sport">Gym / Physique</option>
                         <option value="cognitive">Mémoire / Jeux</option>
                         <option value="creative">Art / Créatif</option>
+                        <option value="boardgames">Jeux de société</option>
+                        <option value="vr">Casque RV</option>
                         <option value="music">Musique / Chant</option>
                         <option value="food">Goûter / Repas</option>
                         <option value="social">Social / Discussion</option>
@@ -388,7 +396,6 @@
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Garde la configuration d'origine
         const firebaseConfig = {
             apiKey: "AIzaSyBVMlD2Jdm-Ql4CyDA_Tw-_XUjvEUYkhok",
             authDomain: "planning-ehpad.firebaseapp.com",
@@ -421,6 +428,8 @@
             sport: { icon: 'fa-dumbbell', color: 'bg-blue-100 text-blue-700 border-blue-200' },
             cognitive: { icon: 'fa-brain', color: 'bg-purple-100 text-purple-700 border-purple-200' },
             creative: { icon: 'fa-palette', color: 'bg-pink-100 text-pink-700 border-pink-200' },
+            vr: { icon: 'fa-vr-cardboard', color: 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200' },
+            boardgames: { icon: 'fa-dice', color: 'bg-lime-100 text-lime-700 border-lime-200' },
             music: { icon: 'fa-music', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
             food: { icon: 'fa-coffee', color: 'bg-orange-100 text-orange-700 border-orange-200' },
             social: { icon: 'fa-comments', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
@@ -495,7 +504,7 @@
                 btnPasa.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
                 subTitle.innerText = "Planning Animation";
                 if(submitBtn) { submitBtn.className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2"; }
-                if(adminBadge) { adminBadge.className = "bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded"; }
+                if(adminBadge) { adminBadge.className = "bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded"; }
             } else {
                 header.classList.remove('border-emerald-500'); header.classList.add('border-amber-500');
                 logoBg.classList.remove('bg-emerald-100', 'text-emerald-600'); logoBg.classList.add('bg-amber-100', 'text-amber-600');
@@ -503,7 +512,7 @@
                 btnMain.className = "flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all duration-300";
                 subTitle.innerText = "Planning PASA";
                 if(submitBtn) { submitBtn.className = "bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2"; }
-                if(adminBadge) { adminBadge.className = "bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-0.5 rounded"; }
+                if(adminBadge) { adminBadge.className = "bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-1 rounded"; }
             }
         }
 
@@ -740,6 +749,59 @@
             }
         }
 
+        // --- NOUVEAUTÉ : VIDER UN JOUR SPÉCIFIQUE ---
+        window.clearDay = async (day) => {
+            if(!db) return;
+            const unitActs = allActivities.filter(a => (a.unit || 'main') === currentUnit && (a.weekId === viewedWeekId || a.isRecurring) && a.day === day);
+            if (unitActs.length === 0) return;
+
+            const hasRecurring = unitActs.some(a => a.isRecurring);
+            let msg = `Voulez-vous vraiment supprimer toutes les activités du ${day} ?`;
+            if (hasRecurring) {
+                msg += `\n\n⚠️ ATTENTION : Ce jour contient des activités récurrentes ! Les supprimer ici les supprimera également de TOUTES les semaines du calendrier.`;
+            }
+
+            if (!confirm(msg)) return;
+
+            showToast(`Suppression des activités du ${day}...`, 'info');
+            try {
+                for (const act of unitActs) {
+                    await deleteDoc(doc(db, "activities", act.id));
+                }
+                showToast(`${day} vidé avec succès.`, 'success');
+            } catch (e) {
+                showToast("Erreur lors de la suppression.", "error");
+            }
+        };
+
+        // --- NOUVEAUTÉ : VIDER TOUTE LA SEMAINE ---
+        window.clearWeek = async () => {
+            if(!db) return;
+            const unitActs = allActivities.filter(a => (a.unit || 'main') === currentUnit && (a.weekId === viewedWeekId || a.isRecurring));
+            if (unitActs.length === 0) {
+                showToast("La semaine est déjà vide.", "info");
+                return;
+            }
+
+            const hasRecurring = unitActs.some(a => a.isRecurring);
+            let msg = `Voulez-vous vraiment vider ENTIÈREMENT cette semaine (${currentUnit === 'main' ? 'Animation' : 'PASA'}) ?\nCette action est irréversible.`;
+            if (hasRecurring) {
+                msg += `\n\n⚠️ ATTENTION : Des activités récurrentes sont présentes. Continuer les supprimera également de TOUTES les semaines du calendrier !`;
+            }
+
+            if (!confirm(msg)) return;
+
+            showToast(`Suppression de la semaine en cours...`, 'info');
+            try {
+                for (const act of unitActs) {
+                    await deleteDoc(doc(db, "activities", act.id));
+                }
+                showToast(`Semaine vidée avec succès.`, 'success');
+            } catch (e) {
+                showToast("Erreur lors de la suppression de la semaine.", "error");
+            }
+        };
+
         // --- CRUD FORM ---
         document.getElementById('addActivityForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -816,8 +878,6 @@
         };
 
         // --- IMPORT IA (NETSOINS) AMÉLIORÉ ---
-        
-        // Nouvelle fonction de fetch silencieuse avec Backoff Exponentiel
         async function fetchWithRetry(url, options, maxRetries = 5) {
             const delays = [1000, 2000, 4000, 8000, 16000];
             for (let i = 0; i < maxRetries; i++) {
@@ -826,13 +886,11 @@
                     const data = await response.json();
                     
                     if (!response.ok) {
-                        // On retourne explicitement l'erreur pour la gérer plus bas
                         return { error: data.error || { code: response.status, message: "Erreur API Google" } };
                     }
                     return data;
                 } catch (error) {
                     if (i === maxRetries - 1) throw error;
-                    // Attente sans flood la console
                     await new Promise(resolve => setTimeout(resolve, delays[i]));
                 }
             }
@@ -843,23 +901,17 @@
             const file = e.target.files[0];
             if(!file) return;
 
-            // --- GESTION SÉCURISÉE DE LA CLÉ API (Option 1) ---
             let apiKey = localStorage.getItem('geminiApiKey');
-            
-            // Si la clé n'existe pas, on affiche une popup pour la demander à l'utilisateur
             if (!apiKey) {
                 apiKey = prompt("🔒 Sécurité : Veuillez entrer votre clé API Google Gemini pour utiliser l'IA.\nElle sera sauvegardée uniquement sur votre navigateur actuel.");
                 
                 if (!apiKey || apiKey.trim() === "") {
                     showToast("L'importation IA nécessite une clé API.", "error");
-                    fileInput.value = ''; // On réinitialise l'input
-                    return; // On arrête l'exécution ici
+                    fileInput.value = ''; 
+                    return; 
                 }
-                
-                // On sauvegarde la clé dans le navigateur pour les prochaines fois
                 localStorage.setItem('geminiApiKey', apiKey.trim());
             }
-            // --------------------------------------------------
 
             const reader = new FileReader();
             const imgPreview = document.getElementById('imagePreview');
@@ -909,7 +961,6 @@ Règles de lecture (TRÈS IMPORTANT) :
 6. TYPE ('type') : Analyse le sens du titre et assigne l'une de ces catégories exactes : sport, cognitive, creative, music, food, social, outing, festive, sensory, animal, religious, cinema. Exemples de logique : Volley/Gym/Yoga -> sport, Repas/Cuisine -> food, Messe -> religious, Loto/jeux/Lecture -> cognitive, Tricot/Peinture -> creative, Chansons/Chant -> music, rencontres/papote -> social, fête/anniversaire -> festive.
 `;
 
-            // Utilisation d'un Schéma de réponse "OBJECT" avec une liste "activities" pour une compatibilité parfaite
             const payload = {
                 contents: [{
                     role: "user",
@@ -949,11 +1000,9 @@ Règles de lecture (TRÈS IMPORTANT) :
                 body: JSON.stringify(payload)
             });
 
-            // Gérer les erreurs de clés API (Google renvoie généralement un code d'erreur HTTP 400 ou 403)
             if (response.error) {
                 const errCode = response.error.code;
                 if (errCode === 400 || errCode === 403 || errCode === 401) {
-                    // Si la clé est refusée, on la supprime de la mémoire pour permettre une nouvelle saisie
                     localStorage.removeItem('geminiApiKey');
                     throw new Error("Clé API refusée ou invalide. Veuillez réessayer avec une clé valide.");
                 }
@@ -965,11 +1014,8 @@ Règles de lecture (TRÈS IMPORTANT) :
                 throw new Error("Réponse vide de l'IA");
             }
 
-            // Nettoyage et Parse du JSON
             rawJsonText = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
             const parsedData = JSON.parse(rawJsonText);
-            
-            // On récupère le tableau d'activités depuis notre nouvel objet structuré
             const activities = parsedData.activities;
             
             if(!Array.isArray(activities) || activities.length === 0) {
@@ -1027,12 +1073,18 @@ Règles de lecture (TRÈS IMPORTANT) :
                 if (isToday) dayColumn.id = 'today-column';
                 const headerClass = isToday ? (currentUnit === 'main' ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white') : 'bg-slate-100 text-slate-700';
                 
+                // Intégration du bouton "Vider le jour" si on est en mode Admin et qu'il y a des activités
                 let html = `
-                    <div class="${headerClass} p-4 border-b border-slate-200">
-                        <h3 class="text-xl font-bold capitalize flex justify-between items-center">
-                            <span>${day} <span class="font-sans text-lg font-medium opacity-90 ml-1">${weekDates[day]}</span></span>
+                    <div class="${headerClass} p-4 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="text-xl font-bold capitalize flex items-center flex-wrap gap-2">
+                            <span>${day} <span class="font-sans text-lg font-medium opacity-90">${weekDates[day]}</span></span>
                             ${isToday ? `<span class="text-xs bg-white ${currentUnit === 'main' ? 'text-emerald-600' : 'text-amber-600'} px-2 py-1 rounded-full uppercase">Aujourd'hui</span>` : ''}
                         </h3>
+                        ${isAdmin && dayActivities.length > 0 ? `
+                            <button onclick="clearDay('${day}')" class="text-current opacity-60 hover:opacity-100 hover:text-red-500 transition-all p-2 -mr-2" title="Vider toutes les activités du ${day}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        ` : ''}
                     </div>
                     <div class="p-4 space-y-4 flex-grow bg-slate-50/50" ondrop="drop(event, '${day}')" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)">
                 `;
