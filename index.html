@@ -966,7 +966,7 @@ Attention aux sauts de page et aux erreurs de formatage du PDF :
 Pour CHAQUE activité trouvée, tu dois fournir un objet JSON. 
 
 Règles d'extraction brutes (le nettoyage se fera par le code) :
-1. JOUR ('day') : Identifie le jour de la semaine (ex: Lundi, Mardi...).
+1. JOUR ('day') : Identifie le jour de la semaine et retourne UNIQUEMENT le nom du jour en français parmi : Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, Dimanche. N'inclus JAMAIS la date (ex: si tu vois "Lundi 03/03", retourne uniquement "Lundi").
 2. HEURE ('time') : Extraire l'heure et la convertir au format HH:MM (ex: 12h00 -> 12:00).
 3. TITRE ('title') : Le nom de l'activité. Retire l'heure si elle est collée dedans, et retire les compteurs "0/10".
 4. LIEU ('rawLocation') : Copie EXACTEMENT le texte de la colonne "Lieu" de cette ligne sans RIEN modifier. S'il n'y a rien, laisse vide "".
@@ -1040,8 +1040,19 @@ Règles d'extraction brutes (le nettoyage se fera par le code) :
                 if(!db) break;
                 
                 // 1. Validation du jour
-                let safeDay = act.day ? (act.day.charAt(0).toUpperCase() + act.day.slice(1).toLowerCase()) : "Lundi";
-                if (!validDays.includes(safeDay)) safeDay = "Lundi"; 
+                let safeDay = "Lundi";
+                if (act.day) {
+                    // Cherche d'abord un nom de jour valide au début de la chaîne (ex: "Lundi 03/03" → "Lundi")
+                    const dayInput = act.day.trim();
+                    const foundDay = validDays.find(d => dayInput.toLowerCase().startsWith(d.toLowerCase()));
+                    if (foundDay) {
+                        safeDay = foundDay;
+                    } else {
+                        // Tentative de normalisation exacte
+                        const normalized = dayInput.charAt(0).toUpperCase() + dayInput.slice(1).toLowerCase();
+                        if (validDays.includes(normalized)) safeDay = normalized;
+                    }
+                }
                 
                 // 2. NETTOYAGE ULTRA STRICT DU TITRE ET DÉTECTION PASA (JAVASCRIPT)
                 let finalTitle = act.title || "";
