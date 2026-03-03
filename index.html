@@ -197,7 +197,7 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
                     <select id="inputType" class="w-full p-2 border border-slate-300 rounded-lg">
                         <option value="sport">Gym / Physique</option>
-                        <option value="cognitive">Mémoire / Jeux</option>
+                        <option value="cognitive">Mémoire</option>
                         <option value="creative">Art / Créatif</option>
                         <option value="boardgames">Jeux de société</option>
                         <option value="vr">Casque RV</option>
@@ -970,7 +970,7 @@ Règles d'extraction brutes (le nettoyage se fera par le code) :
 2. HEURE ('time') : Extraire l'heure et la convertir au format HH:MM (ex: 12h00 -> 12:00).
 3. TITRE ('title') : Le nom de l'activité. Retire l'heure si elle est collée dedans, et retire les compteurs "0/10".
 4. LIEU ('rawLocation') : Copie EXACTEMENT le texte de la colonne "Lieu" de cette ligne sans RIEN modifier. S'il n'y a rien, laisse vide "".
-5. TYPE ('type') : Analyse le sens et assigne : sport, cognitive, creative, music, food, social, outing, festive, sensory, animal, religious, ou cinema.
+5. TYPE ('type') : Analyse le sens et assigne : sport, cognitive, creative, boardgames, vr, music, food, social, outing, festive, sensory, animal, religious ou cinema.
 `;
 
             const payload = {
@@ -1121,7 +1121,7 @@ Règles d'extraction brutes (le nettoyage se fera par le code) :
             daysOrder.forEach(day => {
                 const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
                 const dayColumn = document.createElement('div');
-                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-64';
+                dayColumn.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-colors duration-200 scroll-mt-42';
                 
                 const isToday = viewedWeekId === currentWeekId && new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).toLowerCase() === day.toLowerCase();
                 if (isToday) dayColumn.id = 'today-column';
