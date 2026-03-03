@@ -52,7 +52,7 @@
             top: 0;
             width: 2000px; /* Haute résolution */
             height: 1414px; /* Ratio A4 Paysage */
-            background: #ffffff;
+            background: #f1f5f9;
             padding: 50px 60px;
             display: flex;
             flex-direction: column;
@@ -563,35 +563,36 @@
                 const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
                 
                 let colHtml = `
-                    <div class="flex flex-col h-full bg-white rounded-2xl shadow-sm overflow-hidden border-2 border-slate-100">
-                        <div class="${mainColorClass} text-white p-4 text-center relative overflow-hidden">
-                            <h3 class="text-3xl font-bold font-serif relative z-10 capitalize">${day}</h3>
-                            <p class="text-xl font-medium opacity-90 relative z-10">${weekDates[day]}</p>
-                            <div class="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white opacity-10 rounded-full"></div>
+                    <div class="flex flex-col h-full bg-white rounded-2xl shadow-lg overflow-hidden">
+                        <div class="${mainColorClass} text-white px-4 py-5 text-center relative overflow-hidden">
+                            <h3 class="text-4xl font-black font-serif relative z-10 capitalize tracking-wide">${day}</h3>
+                            <p class="text-2xl font-bold opacity-90 relative z-10 mt-1">${weekDates[day]}</p>
+                            <div class="absolute top-0 right-0 -mr-8 -mt-8 w-28 h-28 bg-white opacity-10 rounded-full"></div>
+                            <div class="absolute bottom-0 left-0 -ml-4 -mb-4 w-16 h-16 bg-white opacity-10 rounded-full"></div>
                         </div>
-                        <div class="p-4 flex-grow space-y-4 bg-slate-50/50">
+                        <div class="p-3 flex-grow space-y-3">
                 `;
-                
+
                 if (dayActivities.length === 0) {
-                    colHtml += `<div class="text-center py-10 opacity-30 text-slate-400"><i class="fas fa-bed text-5xl mb-3"></i><p class="text-xl font-medium">Repos</p></div>`;
+                    colHtml += `<div class="text-center py-8 opacity-20 text-slate-500"><i class="fas fa-moon text-5xl mb-3"></i><p class="text-2xl font-bold">Repos</p></div>`;
                 } else {
                     dayActivities.forEach(act => {
                         const style = activityTypes[act.type] || activityTypes.social;
-                        const bgClass = style.color.split(' ')[0]; 
+                        const bgClass = style.color.split(' ')[0];
                         const textClass = style.color.split(' ')[1];
                         const borderColorClass = textClass.replace('text-', 'border-');
 
                         colHtml += `
-                            <div class="relative bg-white rounded-xl p-3 shadow-sm border border-slate-200 border-l-[8px] ${borderColorClass} flex flex-col gap-1 overflow-hidden group">
-                                <div class="flex justify-between items-start mb-1">
-                                    <span class="font-bold text-2xl text-slate-800 font-sans tracking-tight">${act.time}</span>
-                                    <div class="${bgClass.replace('bg-', 'bg-opacity-30 ')} ${textClass} w-10 h-10 rounded-full flex items-center justify-center text-xl">
+                            <div class="${bgClass} rounded-2xl overflow-hidden border-l-[12px] ${borderColorClass} shadow-sm">
+                                <div class="flex items-center justify-between px-4 pt-4 pb-2">
+                                    <span class="font-black text-5xl ${textClass} leading-none tracking-tight">${act.time}</span>
+                                    <div class="${bgClass.replace('100','200')} ${textClass} w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0">
                                         <i class="fas ${style.icon}"></i>
                                     </div>
                                 </div>
-                                <div class="pr-2">
-                                    <p class="font-bold text-xl text-slate-800 leading-tight mb-1">${act.title}</p>
-                                    ${act.desc ? `<p class="text-lg text-slate-500 font-medium leading-snug">${act.desc}</p>` : ''}
+                                <div class="px-4 pb-4">
+                                    <p class="font-black text-2xl text-slate-900 leading-tight">${act.title}</p>
+                                    ${act.desc ? `<p class="text-xl ${textClass} font-semibold mt-1">${act.desc}</p>` : ''}
                                 </div>
                             </div>
                         `;
@@ -603,7 +604,7 @@
 
             setTimeout(async () => {
                 try {
-                    const canvas = await html2canvas(poster, { scale: 1.5, useCORS: true, logging: false });
+                    const canvas = await html2canvas(poster, { scale: 2.0, useCORS: true, logging: false });
                     const imgData = canvas.toDataURL('image/jpeg', 0.95);
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF('l', 'mm', 'a4');
