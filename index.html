@@ -53,7 +53,7 @@
             width: 2000px; /* Haute résolution */
             height: 1414px; /* Ratio A4 Paysage */
             background: #ffffff;
-            padding: 50px 60px;
+            padding: 30px 36px 18px 36px;
             display: flex;
             flex-direction: column;
             z-index: -100;
@@ -62,13 +62,13 @@
         /* Filigrane Logo */
         .watermark {
             position: absolute;
-            bottom: -80px;
-            right: -80px;
-            font-size: 700px;
+            bottom: -40px;
+            right: -40px;
+            font-size: 400px;
             color: #f0fdf4;
             z-index: 0;
             pointer-events: none;
-            opacity: 0.6;
+            opacity: 0.4;
         }
 
         /* Animation Loading AI */
@@ -294,32 +294,30 @@
     <div id="poster-container">
         <i class="fas fa-leaf watermark"></i>
 
-        <div class="flex items-center justify-between mb-10 relative z-10 w-full" id="posterHeader">
-            <div class="flex items-center gap-8">
-                <div id="posterLogo" class="bg-emerald-600 text-white w-32 h-32 flex items-center justify-center rounded-3xl text-6xl shadow-lg border-4 border-white">
+        <div class="flex items-center justify-between mb-5 pb-4 relative z-10 w-full" id="posterHeader">
+            <div class="flex items-center gap-5">
+                <div id="posterLogo" class="bg-emerald-600 text-white w-20 h-20 flex items-center justify-center rounded-2xl text-4xl shadow-lg border-2 border-white">
                     <i class="fas fa-leaf"></i>
                 </div>
                 <div class="flex flex-col">
-                    <h1 class="text-6xl font-serif text-slate-800 font-black tracking-tight leading-tight">EHPAD Claudette Chesne</h1>
-                    <div class="flex items-center gap-4 mt-2">
-                        <h2 class="text-4xl font-sans font-semibold"><span class="font-light tracking-wide">Planning</span> <span id="posterSubTitle">Animation</span></h2>
-                    </div>
+                    <h1 class="text-5xl font-serif text-slate-800 font-black tracking-tight leading-none">EHPAD Claudette Chesne</h1>
+                    <h2 class="text-3xl font-sans font-semibold mt-1"><span class="font-light tracking-wide">Planning</span> <span id="posterSubTitle">Animation</span></h2>
                 </div>
             </div>
-            
-            <div class="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-lg text-right min-w-[350px]">
-                <p class="text-xl text-slate-400 font-bold uppercase tracking-widest mb-1">Semaine du</p>
-                <p id="posterDateRange" class="text-4xl font-bold text-slate-800 font-sans">Lundi au Dimanche</p>
+
+            <div class="bg-slate-50 px-6 py-3 rounded-xl border border-slate-200 text-right">
+                <p class="text-base text-slate-400 font-bold uppercase tracking-widest">Semaine du</p>
+                <p id="posterDateRange" class="text-3xl font-bold text-slate-800 font-sans">Lundi au Dimanche</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-7 gap-5 flex-grow items-stretch relative z-10 w-full" id="posterGrid">
+        <div class="grid grid-cols-7 gap-3 flex-grow items-stretch relative z-10 w-full" id="posterGrid">
             <!-- Rempli par JS -->
         </div>
 
-        <div class="mt-8 flex justify-between items-center text-slate-500 text-xl border-t border-slate-200 pt-6 relative z-10 font-medium w-full">
-            <p><i class="fas fa-info-circle mr-2 text-emerald-500"></i> Les activités sont susceptibles d'être modifiées.</p>
-            <p>Document mis à jour le <span id="printDate"></span></p>
+        <div class="mt-3 flex justify-between items-center text-slate-400 text-sm border-t border-slate-200 pt-3 relative z-10 font-medium w-full">
+            <p><i class="fas fa-info-circle mr-1 text-slate-300"></i> Les activités sont susceptibles d'être modifiées.</p>
+            <p>Mis à jour le <span id="printDate"></span></p>
         </div>
     </div>
 
@@ -545,54 +543,50 @@
             const logoColorClass = isMain ? 'bg-emerald-600' : 'bg-amber-600';
             const borderColor = isMain ? 'border-emerald-600' : 'border-amber-600';
             
-            document.getElementById('posterLogo').className = `${logoColorClass} text-white w-32 h-32 flex items-center justify-center rounded-3xl text-6xl shadow-md border-4 border-white`;
-            document.getElementById('posterHeader').className = `flex items-center justify-between mb-8 pb-6 border-b-4 ${borderColor} relative z-10 w-full`;
+            document.getElementById('posterLogo').className = `${logoColorClass} text-white w-20 h-20 flex items-center justify-center rounded-2xl text-4xl shadow-lg border-2 border-white`;
+            document.getElementById('posterHeader').className = `flex items-center justify-between mb-5 pb-4 border-b-2 ${borderColor} relative z-10 w-full`;
             document.getElementById('posterSubTitle').innerText = isMain ? "Animation" : "PASA";
-            document.getElementById('posterSubTitle').className = `text-4xl ${mainColorText} font-sans font-semibold`;
+            document.getElementById('posterSubTitle').className = `text-3xl ${mainColorText} font-sans font-semibold`;
             
             const daysToExport = mode === 'weekday' ? daysOrder.slice(0, 5) : daysOrder;
             const gridColsClass = mode === 'weekday' ? 'grid-cols-5' : 'grid-cols-7';
             const endDateText = mode === 'weekday' ? 'Vendredi' : 'Dimanche';
             
             document.getElementById('posterDateRange').innerText = `${weekDates['Lundi']} au ${weekDates[endDateText]}`;
-            posterGrid.className = `grid ${gridColsClass} gap-5 flex-grow items-stretch relative z-10 w-full`;
+            posterGrid.className = `grid ${gridColsClass} gap-3 flex-grow items-stretch relative z-10 w-full`;
             
             posterGrid.innerHTML = '';
-            
+
+            // Le jour le plus chargé définit la grille
+            const maxActs = Math.max(...daysToExport.map(day => unitActivities.filter(a => a.day === day).length), 1);
+
             daysToExport.forEach(day => {
                 const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
-                
+
                 let colHtml = `
-                    <div class="flex flex-col h-full bg-white rounded-2xl shadow-sm overflow-hidden border-2 border-slate-100">
-                        <div class="${mainColorClass} text-white p-4 text-center relative overflow-hidden">
-                            <h3 class="text-3xl font-bold font-serif relative z-10 capitalize">${day}</h3>
-                            <p class="text-xl font-medium opacity-90 relative z-10">${weekDates[day]}</p>
-                            <div class="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white opacity-10 rounded-full"></div>
+                    <div style="display:flex; flex-direction:column; height:100%; background:#fff; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+                        <div class="${mainColorClass}" style="color:#fff; padding:10px 8px; text-align:center;">
+                            <h3 style="font-size:30px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em;">${day}</h3>
+                            <p style="font-size:20px; font-weight:600; opacity:0.85; margin-top:2px;">${weekDates[day]}</p>
                         </div>
-                        <div class="p-4 flex-grow space-y-4 bg-slate-50/50">
+                        <div style="flex:1; display:grid; grid-template-rows:repeat(${maxActs}, 1fr); gap:4px; padding:6px; background:#fafbfc;">
                 `;
-                
+
                 if (dayActivities.length === 0) {
-                    colHtml += `<div class="text-center py-10 opacity-30 text-slate-400"><i class="fas fa-bed text-5xl mb-3"></i><p class="text-xl font-medium">Repos</p></div>`;
+                    colHtml += `<div style="grid-row:1 / -1; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0.2; color:#94a3b8;"><i class="fas fa-bed" style="font-size:36px; margin-bottom:8px;"></i><p style="font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Repos</p></div>`;
                 } else {
                     dayActivities.forEach(act => {
                         const style = activityTypes[act.type] || activityTypes.social;
-                        const bgClass = style.color.split(' ')[0]; 
                         const textClass = style.color.split(' ')[1];
                         const borderColorClass = textClass.replace('text-', 'border-');
-
                         colHtml += `
-                            <div class="relative bg-white rounded-xl p-3 shadow-sm border border-slate-200 border-l-[8px] ${borderColorClass} flex flex-col gap-1 overflow-hidden group">
-                                <div class="flex justify-between items-start mb-1">
-                                    <span class="font-bold text-2xl text-slate-800 font-sans tracking-tight">${act.time}</span>
-                                    <div class="${bgClass.replace('bg-', 'bg-opacity-30 ')} ${textClass} w-10 h-10 rounded-full flex items-center justify-center text-xl">
-                                        <i class="fas ${style.icon}"></i>
-                                    </div>
+                            <div class="border-l-4 ${borderColorClass}" style="display:flex; flex-direction:column; justify-content:center; background:#fff; border-radius:8px; padding:6px 10px; border-top:1px solid #f1f5f9; border-right:1px solid #f1f5f9; border-bottom:1px solid #f1f5f9; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+                                    <span class="${textClass}" style="font-size:22px;"><i class="fas ${style.icon}"></i></span>
+                                    <span class="${textClass}" style="font-weight:800; font-size:26px;">${act.time}</span>
                                 </div>
-                                <div class="pr-2">
-                                    <p class="font-bold text-xl text-slate-800 leading-tight mb-1">${act.title}</p>
-                                    ${act.desc ? `<p class="text-lg text-slate-500 font-medium leading-snug">${act.desc}</p>` : ''}
-                                </div>
+                                <p style="font-weight:700; font-size:24px; color:#1e293b; line-height:1.2;">${act.title}</p>
+                                ${act.desc ? `<p style="font-size:20px; color:#64748b; font-weight:500; line-height:1.25; margin-top:3px;">${act.desc}</p>` : ''}
                             </div>
                         `;
                     });
