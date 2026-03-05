@@ -50,25 +50,42 @@
             position: fixed;
             left: -9999px;
             top: 0;
-            width: 2000px; /* Haute résolution */
-            height: 1414px; /* Ratio A4 Paysage */
-            background: #ffffff;
-            padding: 30px 36px 18px 36px;
+            width: 2000px;
+            height: 1414px;
+            background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 40%, #e8f5e9 100%);
+            padding: 0;
             display: flex;
             flex-direction: column;
             z-index: -100;
+            overflow: hidden;
         }
-        
-        /* Filigrane Logo */
+        #poster-container .poster-inner {
+            padding: 0 36px 18px 36px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        /* Filigrane */
         .watermark {
             position: absolute;
-            bottom: -40px;
-            right: -40px;
-            font-size: 400px;
-            color: #f0fdf4;
+            bottom: -60px;
+            right: -60px;
+            font-size: 500px;
+            color: rgba(16, 185, 129, 0.06);
             z-index: 0;
             pointer-events: none;
-            opacity: 0.4;
+            transform: rotate(-15deg);
+        }
+        .watermark-2 {
+            position: absolute;
+            top: -80px;
+            left: -80px;
+            font-size: 350px;
+            color: rgba(16, 185, 129, 0.04);
+            z-index: 0;
+            pointer-events: none;
+            transform: rotate(20deg);
         }
 
         /* Animation Loading AI */
@@ -293,31 +310,36 @@
     <!-- GABARIT POSTER (Invisible) -->
     <div id="poster-container">
         <i class="fas fa-leaf watermark"></i>
+        <i class="fas fa-leaf watermark-2"></i>
 
-        <div class="flex items-center justify-between mb-5 pb-4 relative z-10 w-full" id="posterHeader">
-            <div class="flex items-center gap-5">
-                <div id="posterLogo" class="bg-emerald-600 text-white w-20 h-20 flex items-center justify-center rounded-2xl text-4xl shadow-lg border-2 border-white">
+        <!-- Bandeau Header -->
+        <div id="posterHeaderBand" style="background:linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%); padding:22px 40px; display:flex; align-items:center; justify-content:space-between; position:relative; z-index:10;">
+            <div style="display:flex; align-items:center; gap:20px;">
+                <div id="posterLogo" style="background:rgba(255,255,255,0.2); backdrop-filter:blur(8px); width:72px; height:72px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:34px; color:#fff; border:2px solid rgba(255,255,255,0.3); box-shadow:0 4px 15px rgba(0,0,0,0.15);">
                     <i class="fas fa-leaf"></i>
                 </div>
-                <div class="flex flex-col">
-                    <h1 class="text-5xl font-serif text-slate-800 font-black tracking-tight leading-none">EHPAD Claudette Chesne</h1>
-                    <h2 class="text-3xl font-sans font-semibold mt-1"><span class="font-light tracking-wide">Planning</span> <span id="posterSubTitle">Animation</span></h2>
+                <div>
+                    <h1 style="font-family:'Playfair Display',serif; font-size:42px; font-weight:900; color:#fff; letter-spacing:-0.5px; line-height:1; text-shadow:0 2px 4px rgba(0,0,0,0.15);">EHPAD Claudette Chesne</h1>
+                    <h2 style="font-size:26px; font-weight:600; color:rgba(255,255,255,0.9); margin-top:4px; letter-spacing:0.5px;">
+                        Planning <span id="posterSubTitle" style="font-weight:800; color:#fff;">Animation</span>
+                    </h2>
                 </div>
             </div>
-
-            <div class="bg-slate-50 px-6 py-3 rounded-xl border border-slate-200 text-right">
-                <p class="text-base text-slate-400 font-bold uppercase tracking-widest">Semaine du</p>
-                <p id="posterDateRange" class="text-3xl font-bold text-slate-800 font-sans">Lundi au Dimanche</p>
+            <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(8px); padding:12px 24px; border-radius:14px; text-align:right; border:1px solid rgba(255,255,255,0.2);">
+                <p style="font-size:12px; color:rgba(255,255,255,0.7); font-weight:700; text-transform:uppercase; letter-spacing:3px;">Semaine du</p>
+                <p id="posterDateRange" style="font-size:26px; font-weight:800; color:#fff; font-family:'Lato',sans-serif;">Lundi au Dimanche</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-7 gap-3 flex-grow items-stretch relative z-10 w-full" id="posterGrid">
-            <!-- Rempli par JS -->
-        </div>
+        <div class="poster-inner">
+            <div class="grid grid-cols-7 gap-3 flex-grow items-stretch relative z-10 w-full" id="posterGrid" style="margin-top:16px;">
+                <!-- Rempli par JS -->
+            </div>
 
-        <div class="mt-3 flex justify-between items-center text-slate-400 text-sm border-t border-slate-200 pt-3 relative z-10 font-medium w-full">
-            <p><i class="fas fa-info-circle mr-1 text-slate-300"></i> Les activités sont susceptibles d'être modifiées.</p>
-            <p>Mis à jour le <span id="printDate"></span></p>
+            <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; color:#94a3b8; font-size:13px; border-top:2px solid #e2e8f0; padding-top:10px; position:relative; z-index:10; font-weight:500;">
+                <p><i class="fas fa-info-circle" style="margin-right:4px; color:#cbd5e1;"></i> Les activités sont susceptibles d'être modifiées.</p>
+                <p>Mis à jour le <span id="printDate"></span></p>
+            </div>
         </div>
     </div>
 
@@ -531,62 +553,86 @@
         window.generateBeautifulPDF = async (mode = 'full') => {
             showToast("Génération de l'affiche en cours...", "info");
             document.getElementById('printDate').innerText = new Date().toLocaleDateString('fr-FR');
-            
+
             const poster = document.getElementById('poster-container');
             const posterGrid = document.getElementById('posterGrid');
+            const headerBand = document.getElementById('posterHeaderBand');
             const weekDates = getWeekDates();
             const unitActivities = allActivities.filter(a => (a.unit || 'main') === currentUnit && (a.weekId === viewedWeekId || a.isRecurring));
-            
+
             const isMain = currentUnit === 'main';
-            const mainColorClass = isMain ? 'bg-emerald-600' : 'bg-amber-600';
-            const mainColorText = isMain ? 'text-emerald-700' : 'text-amber-700';
-            const logoColorClass = isMain ? 'bg-emerald-600' : 'bg-amber-600';
-            const borderColor = isMain ? 'border-emerald-600' : 'border-amber-600';
-            
-            document.getElementById('posterLogo').className = `${logoColorClass} text-white w-20 h-20 flex items-center justify-center rounded-2xl text-4xl shadow-lg border-2 border-white`;
-            document.getElementById('posterHeader').className = `flex items-center justify-between mb-5 pb-4 border-b-2 ${borderColor} relative z-10 w-full`;
+
+            // Couleurs dynamiques selon l'unité
+            const gradientMain = isMain
+                ? 'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)'
+                : 'linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%)';
+            const headerBg = isMain ? '#059669' : '#d97706';
+            const headerBgLight = isMain ? '#10b981' : '#f59e0b';
+            const accentColor = isMain ? '#10b981' : '#f59e0b';
+
+            headerBand.style.background = gradientMain;
             document.getElementById('posterSubTitle').innerText = isMain ? "Animation" : "PASA";
-            document.getElementById('posterSubTitle').className = `text-3xl ${mainColorText} font-sans font-semibold`;
-            
+
+            // Background du poster
+            poster.style.background = isMain
+                ? 'linear-gradient(160deg, #f8fafc 0%, #f1f5f9 40%, #ecfdf5 100%)'
+                : 'linear-gradient(160deg, #f8fafc 0%, #f1f5f9 40%, #fffbeb 100%)';
+
+            // Watermarks
+            const wm = poster.querySelectorAll('.watermark, .watermark-2');
+            wm.forEach(el => el.style.color = isMain ? 'rgba(16,185,129,0.06)' : 'rgba(245,158,11,0.06)');
+
             const daysToExport = mode === 'weekday' ? daysOrder.slice(0, 5) : daysOrder;
             const gridColsClass = mode === 'weekday' ? 'grid-cols-5' : 'grid-cols-7';
             const endDateText = mode === 'weekday' ? 'Vendredi' : 'Dimanche';
-            
+            const gapSize = mode === 'weekday' ? '5' : '3';
+
             document.getElementById('posterDateRange').innerText = `${weekDates['Lundi']} au ${weekDates[endDateText]}`;
-            posterGrid.className = `grid ${gridColsClass} gap-3 flex-grow items-stretch relative z-10 w-full`;
-            
+            posterGrid.className = `grid ${gridColsClass} gap-${gapSize} flex-grow items-stretch relative z-10 w-full`;
+            posterGrid.style.marginTop = '16px';
+
             posterGrid.innerHTML = '';
 
-            // Le jour le plus chargé définit la grille
             const maxActs = Math.max(...daysToExport.map(day => unitActivities.filter(a => a.day === day).length), 1);
+
+            const dayEmojis = {
+                'Lundi': '🌅', 'Mardi': '🌿', 'Mercredi': '☀️', 'Jeudi': '🌻',
+                'Vendredi': '🎉', 'Samedi': '🌈', 'Dimanche': '🕊️'
+            };
 
             daysToExport.forEach(day => {
                 const dayActivities = unitActivities.filter(a => a.day === day).sort((a, b) => a.time.localeCompare(b.time));
 
                 let colHtml = `
-                    <div style="display:flex; flex-direction:column; height:100%; background:#fff; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-                        <div class="${mainColorClass}" style="color:#fff; padding:10px 8px; text-align:center;">
-                            <h3 style="font-size:30px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em;">${day}</h3>
-                            <p style="font-size:20px; font-weight:600; opacity:0.85; margin-top:2px;">${weekDates[day]}</p>
+                    <div style="display:flex; flex-direction:column; height:100%; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04);">
+                        <div style="background:linear-gradient(135deg, ${headerBg}, ${headerBgLight}); color:#fff; padding:14px 10px 12px; text-align:center; position:relative; overflow:hidden;">
+                            <div style="position:absolute; top:-15px; right:-15px; font-size:60px; opacity:0.12; transform:rotate(15deg);">${dayEmojis[day]}</div>
+                            <h3 style="font-size:28px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; text-shadow:0 1px 3px rgba(0,0,0,0.15); position:relative;">${day}</h3>
+                            <p style="font-size:18px; font-weight:600; opacity:0.9; margin-top:3px; position:relative;">${weekDates[day]}</p>
                         </div>
-                        <div style="flex:1; display:grid; grid-template-rows:repeat(${maxActs}, 1fr); gap:4px; padding:6px; background:#fafbfc;">
+                        <div style="flex:1; display:grid; grid-template-rows:repeat(${maxActs}, 1fr); gap:5px; padding:8px; background:linear-gradient(180deg, #fafbfc, #f8fafc);">
                 `;
 
                 if (dayActivities.length === 0) {
-                    colHtml += `<div style="grid-row:1 / -1; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0.2; color:#94a3b8;"><i class="fas fa-bed" style="font-size:36px; margin-bottom:8px;"></i><p style="font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Repos</p></div>`;
+                    colHtml += `
+                        <div style="grid-row:1 / -1; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0.25; color:#94a3b8;">
+                            <i class="fas fa-couch" style="font-size:40px; margin-bottom:10px;"></i>
+                            <p style="font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em;">Repos</p>
+                        </div>`;
                 } else {
                     dayActivities.forEach(act => {
                         const style = activityTypes[act.type] || activityTypes.social;
                         const textClass = style.color.split(' ')[1];
+                        const bgClass = style.color.split(' ')[0];
                         const borderColorClass = textClass.replace('text-', 'border-');
                         colHtml += `
-                            <div class="border-l-4 ${borderColorClass}" style="display:flex; flex-direction:column; justify-content:center; background:#fff; border-radius:8px; padding:6px 10px; border-top:1px solid #f1f5f9; border-right:1px solid #f1f5f9; border-bottom:1px solid #f1f5f9; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
-                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-                                    <span class="${textClass}" style="font-size:22px;"><i class="fas ${style.icon}"></i></span>
-                                    <span class="${textClass}" style="font-weight:800; font-size:26px;">${act.time}</span>
+                            <div class="border-l-[5px] ${borderColorClass}" style="display:flex; flex-direction:column; justify-content:center; background:#fff; border-radius:10px; padding:8px 12px; box-shadow:0 2px 6px rgba(0,0,0,0.05); border-top:1px solid #f1f5f9; border-right:1px solid #f1f5f9; border-bottom:1px solid #f1f5f9; transition:all 0.2s;">
+                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
+                                    <table class="${bgClass} ${textClass}" style="width:38px; min-width:38px; height:38px; border-radius:10px; flex-shrink:0; font-size:18px; border-collapse:collapse;"><tr><td style="text-align:center; vertical-align:middle; padding:0 0 12px 0;"><i class="fas ${style.icon}"></i></td></tr></table>
+                                    <span class="${textClass}" style="font-weight:800; font-size:24px; letter-spacing:0.02em;">${act.time}</span>
                                 </div>
-                                <p style="font-weight:700; font-size:24px; color:#1e293b; line-height:1.2;">${act.title}</p>
-                                ${act.desc ? `<p style="font-size:20px; color:#64748b; font-weight:500; line-height:1.25; margin-top:3px;">${act.desc}</p>` : ''}
+                                <p style="font-weight:700; font-size:22px; color:#1e293b; line-height:1.2; margin-left:2px;">${act.title}</p>
+                                ${act.desc ? `<p style="font-size:18px; color:#64748b; font-weight:500; line-height:1.25; margin-top:3px; margin-left:2px; font-style:italic;">${act.desc}</p>` : ''}
                             </div>
                         `;
                     });
@@ -597,21 +643,21 @@
 
             setTimeout(async () => {
                 try {
-                    const canvas = await html2canvas(poster, { scale: 1.5, useCORS: true, logging: false });
+                    const canvas = await html2canvas(poster, { scale: 2, useCORS: true, logging: false, backgroundColor: null });
                     const imgData = canvas.toDataURL('image/jpeg', 0.95);
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF('l', 'mm', 'a4');
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = pdf.internal.pageSize.getHeight();
                     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                    
+
                     const weekPrefix = viewedWeekId === nextWeekId ? 'Sem_Prochaine_' : '';
                     const modeSuffix = mode === 'weekday' ? '_5Jours' : '_7Jours';
                     pdf.save(`Affiche_${weekPrefix}${currentUnit}${modeSuffix}_${new Date().toISOString().split('T')[0]}.pdf`);
-                    
+
                     showToast("Affiche téléchargée !", "success");
                     closeExportModal();
-                } catch (err) { showToast("Erreur lors de la création", "error"); }
+                } catch (err) { console.error(err); showToast("Erreur lors de la création", "error"); }
             }, 800);
         };
 
